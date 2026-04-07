@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ArrendaCR</string>
+    <string name="app_description">Plataforma de Arrendamientos Costa Rica</string>
+
+    <!-- Auth -->
+    <string name="login">Iniciar sesión</string>
+    <string name="logout">Cerrar sesión</string>
+    <string name="register">Registrarse</string>
+    <string name="email">Correo electrónico</string>
+    <string name="password">Contraseña</string>
+    <string name="forgot_password">¿Olvidaste tu contraseña?</string>
+
+    <!-- Navigation -->
+    <string name="nav_dashboard">Inicio</string>
+    <string name="nav_properties">Propiedades</string>
+    <string name="nav_payments">Pagos</string>
+    <string name="nav_messages">Mensajes</string>
+    <string name="nav_profile">Perfil</string>
+
+    <!-- Common -->
+    <string name="cancel">Cancelar</string>
+    <string name="save">Guardar</string>
+    <string name="delete">Eliminar</string>
+    <string name="edit">Editar</string>
+    <string name="back">Volver</string>
+    <string name="loading">Cargando...</string>
+    <string name="error_generic">Ha ocurrido un error. Intenta de nuevo.</string>
+</resources>
