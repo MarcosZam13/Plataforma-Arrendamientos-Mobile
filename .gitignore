@@ -8,3 +8,23 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Android build outputs
+app/build/
+**/build/
+
+# Generated files
+bin/
+gen/
+out/
+
+# Gradle cache
+.gradle/
+
+# KeyStore / signing
+*.jks
+*.keystore
+keystore.properties
+
+# Android Studio editor files
+*.orig

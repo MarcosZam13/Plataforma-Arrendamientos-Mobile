@@ -1,3 +1,6 @@
+// Redirige el build fuera de OneDrive para evitar conflictos de sincronización
+layout.buildDirectory.set(file("C:/AndroidBuild/PlataformaArrendamientos/app"))
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)

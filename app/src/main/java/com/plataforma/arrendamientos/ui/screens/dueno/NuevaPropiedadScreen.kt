@@ -117,7 +117,7 @@ fun NuevaPropiedadScreen(
 
                 // Property type
                 Text("Tipo de propiedad", style = MaterialTheme.typography.labelMedium)
-                PropertyType.values().chunked(3).forEach { row ->
+                PropertyType.values().toList().chunked(3).forEach { row ->
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         row.forEach { tipo ->
                             FilterChip(
