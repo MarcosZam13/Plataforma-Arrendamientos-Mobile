@@ -15,6 +15,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.plataforma.arrendamientos.ui.components.*
 import com.plataforma.arrendamientos.ui.navigation.Screen
+import com.plataforma.arrendamientos.ui.theme.LocalIsDarkTheme
+import com.plataforma.arrendamientos.ui.theme.LocalToggleTheme
 import com.plataforma.arrendamientos.ui.theme.StatusAmber
 import com.plataforma.arrendamientos.ui.theme.StatusAmberContainer
 import com.plataforma.arrendamientos.ui.theme.StatusGreen
@@ -34,6 +36,8 @@ fun DuenoDashboardScreen(
 ) {
     val authState by authViewModel.authState.collectAsState()
     val user = authState.user ?: return
+    val isDarkTheme = LocalIsDarkTheme.current
+    val toggleTheme = LocalToggleTheme.current
 
     val myProperties = propertyViewModel.getPropertiesByOwner(user.id)
     val pendingPayments = paymentViewModel.getPendingPayments(user.id)
@@ -49,6 +53,12 @@ fun DuenoDashboardScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = toggleTheme) {
+                        Icon(
+                            if (isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
+                            contentDescription = "Cambiar tema"
+                        )
+                    }
                     IconButton(onClick = { onNavigate(Screen.NotificacionesDueno.route) }) {
                         Icon(Icons.Default.Notifications, contentDescription = "Notificaciones")
                     }
@@ -191,7 +201,7 @@ fun DuenoDashboardScreen(
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Row(
-                            modifier = Modifier.padding(16.dp),
+                            modifier = Modifier.fillMaxWidth().padding(16.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {

@@ -6,6 +6,9 @@
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.CAMERA" />
 
+    <!-- La cámara es opcional; la app funciona sin ella -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+
     <application
         android:name=".PlataformaApp"
         android:allowBackup="true"
@@ -24,8 +27,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- Deep link for invitaciones -->
-            <intent-filter android:autoVerify="true">
+            <!-- Deep link para invitaciones: arrendamientos://invitacion/{token} -->
+            <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />

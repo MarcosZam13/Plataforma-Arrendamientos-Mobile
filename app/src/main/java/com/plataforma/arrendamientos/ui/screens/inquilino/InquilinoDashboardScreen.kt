@@ -18,6 +18,8 @@ import com.plataforma.arrendamientos.data.model.PaymentStatus
 import com.plataforma.arrendamientos.ui.components.*
 import com.plataforma.arrendamientos.ui.navigation.Screen
 import com.plataforma.arrendamientos.ui.theme.*
+import com.plataforma.arrendamientos.ui.theme.LocalIsDarkTheme
+import com.plataforma.arrendamientos.ui.theme.LocalToggleTheme
 import com.plataforma.arrendamientos.viewmodel.AuthViewModel
 import com.plataforma.arrendamientos.viewmodel.PaymentViewModel
 import com.plataforma.arrendamientos.viewmodel.PropertyViewModel
@@ -33,6 +35,8 @@ fun InquilinoDashboardScreen(
 ) {
     val authState by authViewModel.authState.collectAsState()
     val user = authState.user ?: return
+    val isDarkTheme = LocalIsDarkTheme.current
+    val toggleTheme = LocalToggleTheme.current
     val payments by paymentViewModel.payments.collectAsState()
 
     val myPayments = payments.filter { it.inquilinoId == user.id }
@@ -49,6 +53,12 @@ fun InquilinoDashboardScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = toggleTheme) {
+                        Icon(
+                            if (isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
+                            contentDescription = "Cambiar tema"
+                        )
+                    }
                     IconButton(onClick = { onNavigate(Screen.NotificacionesInquilino.route) }) {
                         Icon(Icons.Default.Notifications, contentDescription = "Notificaciones")
                     }

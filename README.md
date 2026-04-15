@@ -132,11 +132,11 @@ Idéntico al proyecto web:
 
 ---
 
-## Instalación y ejecución
+## Instalación y ejecución local
 
 ```bash
 # 1. Clonar el repositorio
-git clone https://github.com/TU_USUARIO/Plataforma-Arrendamientos-Android.git
+git clone https://github.com/MarcosZamora/Plataforma-Arrendamientos-Android.git
 cd Plataforma-Arrendamientos-Android
 
 # 2. Abrir en Android Studio
@@ -148,7 +148,100 @@ cd Plataforma-Arrendamientos-Android
 # Run > Run 'app'  (emulador o dispositivo físico)
 ```
 
-> El build output se redirige a `C:/AndroidBuild/PlataformaArrendamientos/` para evitar conflictos con sincronización de OneDrive/nube.
+> El build output se redirige a `C:/AndroidBuild/PlataformaArrendamientos/` en Windows local para evitar conflictos con OneDrive. En CI/GitHub Actions usa el directorio estándar `build/`.
+
+---
+
+## CI/CD — Firebase App Distribution
+
+El proyecto usa **GitHub Actions** para generar y distribuir automáticamente una APK a los testers cada vez que se hace push a la rama `release`.
+
+### Flujo de trabajo
+
+```
+push a 'release'
+       │
+       ▼
+GitHub Actions (ubuntu-latest)
+       │
+       ├─ 1. Checkout del código
+       ├─ 2. Configurar JDK 17
+       ├─ 3. Compilar APK debug (./gradlew assembleDebug)
+       ├─ 4. Subir APK como artefacto en GitHub
+       └─ 5. Distribuir a testers via Firebase App Distribution
+                    │
+                    └─ Notificación automática por email a cada tester
+```
+
+### Configurar el proyecto para un repo nuevo
+
+#### Paso 1 — Crear un proyecto en Firebase
+
+1. Ir a [console.firebase.google.com](https://console.firebase.google.com)
+2. Crear un nuevo proyecto (ej. `plataforma-arrendamientos`)
+3. Agregar una app Android con package name `com.plataforma.arrendamientos`
+4. Ir a **App Distribution** en el menú lateral y habilitarlo
+
+#### Paso 2 — Crear cuenta de servicio de Firebase
+
+1. En Firebase Console → Configuración del proyecto → Cuentas de servicio
+2. Hacer clic en **Generar nueva clave privada** → descargar el JSON
+3. Abrir el archivo JSON descargado y copiar todo su contenido
+
+#### Paso 3 — Obtener el App ID de Firebase
+
+1. En Firebase Console → Configuración del proyecto → Tus apps
+2. Copiar el **ID de la aplicación** (formato: `1:XXXXXXXXXX:android:YYYYYYYY`)
+
+#### Paso 4 — Agregar Secrets en GitHub
+
+En el repositorio → **Settings → Secrets and variables → Actions → New repository secret**:
+
+| Secret | Valor |
+|--------|-------|
+| `FIREBASE_APP_ID` | ID de la app de Firebase (`1:XXX:android:YYY`) |
+| `FIREBASE_CREDENTIALS` | Contenido completo del JSON de cuenta de servicio |
+
+#### Paso 5 — Agregar testers en Firebase
+
+1. En Firebase Console → App Distribution → Testers & Groups
+2. Crear un grupo llamado **`testers`** (exactamente así, es lo que usa el workflow)
+3. Agregar los emails de los testers (profesor + compañeros)
+4. Cada tester recibirá un email de invitación de Firebase para instalar la app
+
+#### Paso 6 — Crear y hacer push a la rama `release`
+
+```bash
+# Crear la rama release desde main
+git checkout -b release
+git push origin release
+
+# Para publicar una nueva versión:
+git checkout main
+# ... hacer los cambios ...
+git commit -m "feat: nueva funcionalidad"
+git checkout release
+git merge main
+git push origin release   # ← Esto dispara el workflow automáticamente
+```
+
+### Instalación de la app (instrucciones para testers)
+
+1. Revisar el email de invitación de Firebase App Distribution
+2. Hacer clic en **"Get started"** en el email
+3. Instalar la app de **Firebase App Tester** en el dispositivo Android
+4. Abrir Firebase App Tester e iniciar sesión con el email registrado
+5. La app aparecerá disponible para descargar
+6. En Ajustes de Android → habilitar **"Instalar aplicaciones desconocidas"** para Firebase App Tester
+7. Descargar e instalar la APK desde Firebase App Tester
+
+> Las notificaciones de nuevas versiones llegan automáticamente por email y dentro de la app Firebase App Tester.
+
+### Monitoreo de builds
+
+- **GitHub Actions**: Pestaña `Actions` del repositorio en GitHub
+- **Firebase Console**: App Distribution → Releases
+- Los artefactos (APK) también se guardan en GitHub Actions por 30 días
 
 ---
 
@@ -209,6 +302,8 @@ buildConfigField("String", "API_BASE_URL", "\"https://tu-azure-apim.azure-api.ne
 
 ## Roadmap
 
+- [x] Tema claro / oscuro con persistencia (SharedPreferences)
+- [x] CI/CD con Firebase App Distribution + GitHub Actions
 - [ ] Integración con backend API (Azure APIM)
 - [ ] Subida real de imágenes a almacenamiento en la nube
 - [ ] Notificaciones push (Firebase Cloud Messaging)

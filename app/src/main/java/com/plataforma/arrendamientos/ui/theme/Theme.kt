@@ -6,11 +6,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+
+val LocalIsDarkTheme = compositionLocalOf { false }
+val LocalToggleTheme = compositionLocalOf<() -> Unit> { {} }
 
 private val LightColorScheme = lightColorScheme(
     primary = Primary,
@@ -28,6 +33,7 @@ private val LightColorScheme = lightColorScheme(
     surfaceVariant = BackgroundLight,
     onSurfaceVariant = OnSurfaceVariantLight,
     outline = OutlineLight,
+    outlineVariant = OutlineVariantLight,
     error = StatusRed,
     onError = SurfaceLight,
     errorContainer = StatusRedContainer,
@@ -50,6 +56,7 @@ private val DarkColorScheme = darkColorScheme(
     surfaceVariant = CardDark,
     onSurfaceVariant = OnSurfaceVariantDark,
     outline = OutlineDark,
+    outlineVariant = OutlineVariantDark,
     error = StatusRed,
     onError = SurfaceLight,
     errorContainer = Color(0xFF4A1A2A),
@@ -59,6 +66,7 @@ private val DarkColorScheme = darkColorScheme(
 @Composable
 fun PlataformaTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
+    onToggleTheme: () -> Unit = {},
     content: @Composable () -> Unit
 ) {
     val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
@@ -72,9 +80,14 @@ fun PlataformaTheme(
         }
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
-    )
+    CompositionLocalProvider(
+        LocalIsDarkTheme provides darkTheme,
+        LocalToggleTheme provides onToggleTheme
+    ) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = Typography,
+            content = content
+        )
+    }
 }

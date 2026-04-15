@@ -1,5 +1,6 @@
 package com.plataforma.arrendamientos.ui.screens.dueno
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -117,7 +118,8 @@ fun PagosRecibidosScreen(
                                         OutlinedButton(
                                             onClick = { showRejectDialog = payment },
                                             modifier = Modifier.weight(1f),
-                                            colors = ButtonDefaults.outlinedButtonColors(contentColor = StatusRed)
+                                            colors = ButtonDefaults.outlinedButtonColors(contentColor = StatusRed),
+                                            border = BorderStroke(1.dp, StatusRed)
                                         ) {
                                             Icon(Icons.Default.Close, null, modifier = Modifier.size(14.dp))
                                             Spacer(Modifier.width(4.dp))

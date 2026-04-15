@@ -202,7 +202,15 @@ fun NuevaPropiedadScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(pair.first, style = MaterialTheme.typography.bodyMedium)
-                        Switch(checked = value, onCheckedChange = pair.second)
+                        Switch(
+                            checked = value,
+                            onCheckedChange = pair.second,
+                            colors = SwitchDefaults.colors(
+                                uncheckedTrackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                                uncheckedBorderColor = MaterialTheme.colorScheme.outline,
+                                uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        )
                     }
                 }
             }

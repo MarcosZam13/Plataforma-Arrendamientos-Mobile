@@ -17,8 +17,8 @@ val CardDark = Color(0xFF2C2C2E)
 // Text
 val OnSurfaceLight = Color(0xFF1A1A2E)
 val OnSurfaceDark = Color(0xFFF0F0F0)
-val OnSurfaceVariantLight = Color(0xFF6B7280)
-val OnSurfaceVariantDark = Color(0xFF9CA3AF)
+val OnSurfaceVariantLight = Color(0xFF4A4A52)
+val OnSurfaceVariantDark = Color(0xFF736D6D)
 
 // Status Colors
 val StatusGreen = Color(0xFF16A34A)
@@ -31,5 +31,7 @@ val StatusBlue = Color(0xFF0979B0)
 val StatusBlueContainer = Color(0xFFEEF9FD)
 
 // Outline
-val OutlineLight = Color(0xFFE5E7EB)
-val OutlineDark = Color(0xFF3A3A3C)
+val OutlineLight = Color(0xFF757575)       // ratio 4.5:1 sobre blanco
+val OutlineVariantLight = Color(0xFFD1D5DB) // sutil, para divisores
+val OutlineDark = Color(0xFF545458)         // visible sobre fondos oscuros
+val OutlineVariantDark = Color(0xFF3A3A3C)  // sutil, para divisores en oscuro

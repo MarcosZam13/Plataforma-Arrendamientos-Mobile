@@ -1,0 +1,55 @@
+name: Firebase App Distribution
+
+on:
+  push:
+    branches:
+      - release          # Se activa al hacer push a la rama 'release'
+  workflow_dispatch:     # Permite lanzarlo manualmente desde GitHub
+
+jobs:
+  build-and-distribute:
+    name: Build APK y distribuir por Firebase
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Clonar el repositorio
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      # 2. Configurar JDK 17
+      - name: Configurar JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      # 3. Permisos al script de Gradle
+      - name: Dar permisos a gradlew
+        run: chmod +x gradlew
+
+      # 4. Compilar APK debug
+      - name: Compilar APK debug
+        run: ./gradlew assembleDebug
+
+      # 5. Subir APK como artefacto de GitHub Actions
+      - name: Subir APK como artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: plataforma-arrendamientos-v${{ github.run_number }}
+          path: app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
+
+      # 6. Distribuir via Firebase App Distribution
+      - name: Distribuir via Firebase App Distribution
+        uses: wzieba/Firebase-Distribution-Github-Action@v1
+        with:
+          appId: ${{ secrets.FIREBASE_APP_ID }}
+          serviceCredentialsFileContent: ${{ secrets.FIREBASE_CREDENTIALS }}
+          groups: testers
+          file: app/build/outputs/apk/debug/app-debug.apk
+          releaseNotes: |
+            Nueva version: ${{ github.ref_name }} (#${{ github.run_number }})
+            Commit: ${{ github.sha }}
+            Por: ${{ github.actor }}
+            Mensaje: ${{ github.event.head_commit.message }}
