@@ -24,13 +24,13 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
-      # 3. Permisos al script de Gradle
-      - name: Dar permisos a gradlew
-        run: chmod +x gradlew
+      # 3. Configurar Gradle y generar wrapper
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
 
       # 4. Compilar APK debug
       - name: Compilar APK debug
-        run: ./gradlew assembleDebug
+        run: gradle assembleDebug
 
       # 5. Subir APK como artefacto de GitHub Actions
       - name: Subir APK como artefacto
