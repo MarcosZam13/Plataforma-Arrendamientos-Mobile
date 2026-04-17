@@ -12,6 +12,15 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
+val localProps = java.util.Properties()
+val localPropsFile = rootProject.file("local.properties")
+if (localPropsFile.exists()) {
+    localProps.load(localPropsFile.inputStream())
+}
+val apimKey: String = localProps.getProperty("APIM_SUBSCRIPTION_KEY")
+    ?: System.getenv("APIM_SUBSCRIPTION_KEY")
+    ?: ""
+
 android {
     namespace = "com.plataforma.arrendamientos"
     compileSdk = 35
@@ -25,7 +34,8 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("String", "API_BASE_URL", "\"https://your-azure-apim.azure-api.net/\"")
+        buildConfigField("String", "API_BASE_URL", "\"https://plataforma-arrendamientos-api.azure-api.net/api/\"")
+        buildConfigField("String", "APIM_SUBSCRIPTION_KEY", "\"$apimKey\"")
     }
 
     buildTypes {
