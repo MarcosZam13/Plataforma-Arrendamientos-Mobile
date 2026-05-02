@@ -183,7 +183,12 @@ fun AppNavigation() {
 
         composable(Screen.NotificacionesDueno.route) {
             NotificacionesScreen(
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onNavigate = { route ->
+                    navController.navigate(route) {
+                        popUpTo(Screen.NotificacionesDueno.route) { inclusive = false }
+                    }
+                }
             )
         }
 
@@ -242,7 +247,12 @@ fun AppNavigation() {
 
         composable(Screen.NotificacionesInquilino.route) {
             NotificacionesInquilinoScreen(
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onNavigate = { route ->
+                    navController.navigate(route) {
+                        popUpTo(Screen.NotificacionesInquilino.route) { inclusive = false }
+                    }
+                }
             )
         }
 

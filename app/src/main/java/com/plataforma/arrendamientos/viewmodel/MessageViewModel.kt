@@ -14,14 +14,20 @@ class MessageViewModel @Inject constructor(
 
     val conversations: StateFlow<List<Conversation>> = dataRepository.conversations
 
-    fun getConversationsByUser(userId: String) =
-        dataRepository.getConversationsByUser(userId)
+    fun getConversationsByUser(userId: String) = dataRepository.getConversationsByUser(userId)
 
     fun getMessagesByConversation(conversationId: String) =
         dataRepository.getMessagesByConversation(conversationId)
 
     fun getOrCreateConversation(user1Id: String, user2Id: String, propertyId: String? = null) =
         dataRepository.getOrCreateConversation(user1Id, user2Id, propertyId)
+
+    fun markConversationAsRead(conversationId: String, userId: String) {
+        dataRepository.markMessagesAsRead(conversationId, userId)
+    }
+
+    fun getUnreadTotalForUser(userId: String): Int =
+        dataRepository.getConversationsByUser(userId).sumOf { it.unreadCount[userId] ?: 0 }
 
     fun sendMessage(
         conversationId: String,

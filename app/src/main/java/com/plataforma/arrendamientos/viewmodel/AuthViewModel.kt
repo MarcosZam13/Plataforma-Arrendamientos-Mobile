@@ -6,7 +6,6 @@ import com.plataforma.arrendamientos.data.model.AuthState
 import com.plataforma.arrendamientos.data.model.User
 import com.plataforma.arrendamientos.data.model.UserRole
 import com.plataforma.arrendamientos.data.repository.AuthRepository
-import com.plataforma.arrendamientos.data.repository.DataRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,8 +16,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val authRepository: AuthRepository,
-    private val dataRepository: DataRepository
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
     private val _authState = MutableStateFlow(AuthState())
@@ -32,9 +30,6 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             authRepository.currentUser.collect { user ->
                 _authState.update { it.copy(user = user) }
-                if (user != null) {
-                    dataRepository.loadDataForUser(user.id)
-                }
             }
         }
     }
@@ -46,7 +41,6 @@ class AuthViewModel @Inject constructor(
             result.fold(
                 onSuccess = { user ->
                     _authState.update { it.copy(user = user, isLoading = false) }
-                    dataRepository.loadDataForUser(user.id)
                     onSuccess()
                 },
                 onFailure = { e ->
@@ -56,21 +50,44 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    fun register(
-        nombre: String,
-        correo: String,
-        contrasena: String,
-        rol: UserRole,
-        onSuccess: () -> Unit
-    ) {
+    fun register(nombre: String, correo: String, contrasena: String, rol: UserRole, onSuccess: () -> Unit) {
         viewModelScope.launch {
             _authState.update { it.copy(isLoading = true, error = null) }
             val result = authRepository.register(nombre, correo, contrasena, rol)
             result.fold(
                 onSuccess = { user ->
                     _authState.update { it.copy(user = user, isLoading = false) }
-                    dataRepository.loadDataForUser(user.id)
                     onSuccess()
+                },
+                onFailure = { e ->
+                    _authState.update { it.copy(isLoading = false, error = e.message) }
+                }
+            )
+        }
+    }
+
+    // ─── Google Sign-In ────────────────────────────────────────────────────────
+    // isNewUser: true si el correo no existe aún, false si ya tiene cuenta.
+    // onNeedsRole: se llama cuando es usuario nuevo y hay que preguntarle el rol.
+    // onSuccess: se llama con el usuario listo en ambos casos.
+
+    fun isExistingGoogleUser(correo: String): Boolean =
+        authRepository.findUserByEmail(correo) != null
+
+    fun loginOrRegisterWithGoogle(
+        nombre: String,
+        correo: String,
+        googleId: String,
+        rol: UserRole,
+        onSuccess: (User) -> Unit
+    ) {
+        viewModelScope.launch {
+            _authState.update { it.copy(isLoading = true, error = null) }
+            val result = authRepository.loginOrRegisterWithGoogle(nombre, correo, googleId, rol)
+            result.fold(
+                onSuccess = { user ->
+                    _authState.update { it.copy(user = user, isLoading = false) }
+                    onSuccess(user)
                 },
                 onFailure = { e ->
                     _authState.update { it.copy(isLoading = false, error = e.message) }
@@ -82,7 +99,6 @@ class AuthViewModel @Inject constructor(
     fun logout(onComplete: () -> Unit) {
         viewModelScope.launch {
             authRepository.logout()
-            dataRepository.clearUserData()
             _authState.update { AuthState() }
             onComplete()
         }
