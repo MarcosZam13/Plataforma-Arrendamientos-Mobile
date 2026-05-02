@@ -1,5 +1,6 @@
 package com.plataforma.arrendamientos.ui.screens.dueno
-
+ 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -19,7 +20,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.plataforma.arrendamientos.ui.components.EmptyState
 import com.plataforma.arrendamientos.viewmodel.AuthViewModel
 import com.plataforma.arrendamientos.viewmodel.MessageViewModel
-
+ 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MensajesScreen(
@@ -31,13 +32,12 @@ fun MensajesScreen(
     val user = authState.user ?: return
     val conversations by messageViewModel.conversations.collectAsState()
     val myConversations = messageViewModel.getConversationsByUser(user.id)
-
+ 
     var selectedConversation by remember { mutableStateOf<String?>(null) }
     var messageText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
-
+ 
     if (selectedConversation == null) {
-        // Conversation list
         Scaffold(
             topBar = {
                 TopAppBar(
@@ -53,9 +53,21 @@ fun MensajesScreen(
             } else {
                 LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
                     items(myConversations, key = { it.id }) { conv ->
+                        val unread = conv.unreadCount[user.id] ?: 0
                         ListItem(
-                            headlineContent = { Text(conv.otherUserName.ifBlank { "Inquilino" }, fontWeight = FontWeight.Medium) },
-                            supportingContent = { Text(conv.lastMessage ?: "Sin mensajes", maxLines = 1) },
+                            headlineContent = {
+                                Text(
+                                    conv.otherUserName.ifBlank { "Inquilino" },
+                                    fontWeight = if (unread > 0) FontWeight.Bold else FontWeight.Medium
+                                )
+                            },
+                            supportingContent = {
+                                Text(
+                                    conv.lastMessage ?: "Sin mensajes",
+                                    maxLines = 1,
+                                    fontWeight = if (unread > 0) FontWeight.Medium else FontWeight.Normal
+                                )
+                            },
                             leadingContent = {
                                 Surface(color = MaterialTheme.colorScheme.primaryContainer, shape = CircleShape, modifier = Modifier.size(48.dp)) {
                                     Box(contentAlignment = Alignment.Center) {
@@ -63,17 +75,21 @@ fun MensajesScreen(
                                     }
                                 }
                             },
-                            modifier = Modifier.clip(RoundedCornerShape(0.dp)),
                             trailingContent = {
-                                val count = conv.unreadCount[user.id] ?: 0
-                                if (count > 0) {
+                                if (unread > 0) {
                                     Surface(color = MaterialTheme.colorScheme.primary, shape = CircleShape, modifier = Modifier.size(22.dp)) {
                                         Box(contentAlignment = Alignment.Center) {
-                                            Text("$count", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimary)
+                                            Text("$unread", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimary)
                                         }
                                     }
                                 }
-                            }
+                            },
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(0.dp))
+                                .clickable {
+                                    selectedConversation = conv.id
+                                    messageViewModel.markConversationAsRead(conv.id, user.id)
+                                }
                         )
                         HorizontalDivider()
                     }
@@ -81,13 +97,14 @@ fun MensajesScreen(
             }
         }
     } else {
-        // Chat view
         val messages = messageViewModel.getMessagesByConversation(selectedConversation!!)
-
+        val conv = myConversations.find { it.id == selectedConversation }
+        val receiverId = conv?.participants?.firstOrNull { it != user.id } ?: ""
+ 
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("Conversación") },
+                    title = { Text(conv?.otherUserName?.ifBlank { "Conversación" } ?: "Conversación") },
                     navigationIcon = {
                         IconButton(onClick = { selectedConversation = null }) {
                             Icon(Icons.Default.ArrowBack, null)
@@ -116,7 +133,7 @@ fun MensajesScreen(
                                     messageViewModel.sendMessage(
                                         conversationId = selectedConversation!!,
                                         senderId = user.id,
-                                        receiverId = "other",
+                                        receiverId = receiverId,
                                         content = messageText
                                     )
                                     messageText = ""

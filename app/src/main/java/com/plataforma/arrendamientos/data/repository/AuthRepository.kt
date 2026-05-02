@@ -38,11 +38,7 @@ class AuthRepository @Inject constructor(
     }
 
     suspend fun login(correo: String, contrasena: String): Result<User> {
-        // Demo authentication - match web app mock users
-        val mockUser = MockData.MOCK_USERS.find {
-            it.correo.equals(correo, ignoreCase = true)
-        }
-
+        val mockUser = MockData.MOCK_USERS.find { it.correo.equals(correo, ignoreCase = true) }
         return if (mockUser != null && contrasena == "123456") {
             saveUser(mockUser, "demo-token-${mockUser.id}")
             Result.success(mockUser)
@@ -52,14 +48,8 @@ class AuthRepository @Inject constructor(
     }
 
     suspend fun register(nombre: String, correo: String, contrasena: String, rol: UserRole): Result<User> {
-        // Demo registration
-        val existingUser = MockData.MOCK_USERS.find {
-            it.correo.equals(correo, ignoreCase = true)
-        }
-        if (existingUser != null) {
-            return Result.failure(Exception("Este correo ya está registrado"))
-        }
-
+        val existingUser = MockData.MOCK_USERS.find { it.correo.equals(correo, ignoreCase = true) }
+        if (existingUser != null) return Result.failure(Exception("Este correo ya está registrado"))
         val newUser = User(
             id = "user-${System.currentTimeMillis()}",
             nombre = nombre,
@@ -68,6 +58,32 @@ class AuthRepository @Inject constructor(
         )
         saveUser(newUser, "demo-token-${newUser.id}")
         return Result.success(newUser)
+    }
+
+    // ─── Google Sign-In ────────────────────────────────────────────────────────
+    // Si el correo ya existe en los datos mock, inicia sesión como ese usuario.
+    // Si es un usuario nuevo, crea uno con el rol especificado.
+    // Cuando se conecte Firebase Auth real, reemplazar este método con la
+    // verificación del idToken en el backend.
+
+    fun findUserByEmail(correo: String): User? =
+        MockData.MOCK_USERS.find { it.correo.equals(correo, ignoreCase = true) }
+
+    suspend fun loginOrRegisterWithGoogle(
+        nombre: String,
+        correo: String,
+        googleId: String,
+        rol: UserRole
+    ): Result<User> {
+        val existingUser = findUserByEmail(correo)
+        val user = existingUser ?: User(
+            id = "google-$googleId",
+            nombre = nombre,
+            correo = correo,
+            rol = rol
+        )
+        saveUser(user, "google-token-${user.id}")
+        return Result.success(user)
     }
 
     suspend fun logout() {
@@ -80,9 +96,8 @@ class AuthRepository @Inject constructor(
         }
     }
 
-    suspend fun isLoggedIn(): Boolean {
-        return context.dataStore.data.firstOrNull()?.get(AUTH_TOKEN_KEY) != null
-    }
+    suspend fun isLoggedIn(): Boolean =
+        context.dataStore.data.firstOrNull()?.get(AUTH_TOKEN_KEY) != null
 
     private suspend fun saveUser(user: User, token: String) {
         context.dataStore.edit { prefs ->
