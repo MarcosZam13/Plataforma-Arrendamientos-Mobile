@@ -1,5 +1,5 @@
 package com.plataforma.arrendamientos.ui.screens.inquilino
- 
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -25,9 +25,9 @@ import com.plataforma.arrendamientos.ui.theme.*
 import com.plataforma.arrendamientos.viewmodel.AuthViewModel
 import com.plataforma.arrendamientos.viewmodel.MessageViewModel
 import com.plataforma.arrendamientos.viewmodel.PaymentViewModel
- 
+
 // ─── Mensajes Inquilino ───────────────────────────────────────────────────────
- 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MensajesInquilinoScreen(
@@ -39,11 +39,11 @@ fun MensajesInquilinoScreen(
     val user = authState.user ?: return
     val conversations by messageViewModel.conversations.collectAsState()
     val myConversations = messageViewModel.getConversationsByUser(user.id)
- 
+
     var selectedConversation by remember { mutableStateOf<String?>(null) }
     var messageText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
- 
+
     if (selectedConversation == null) {
         Scaffold(
             topBar = {
@@ -111,7 +111,7 @@ fun MensajesInquilinoScreen(
         val messages = messageViewModel.getMessagesByConversation(selectedConversation!!)
         val conv = myConversations.find { it.id == selectedConversation }
         val receiverId = conv?.participants?.firstOrNull { it != user.id } ?: ""
- 
+
         Scaffold(
             topBar = {
                 TopAppBar(
@@ -191,9 +191,9 @@ fun MensajesInquilinoScreen(
         }
     }
 }
- 
+
 // ─── Historial Inquilino ──────────────────────────────────────────────────────
- 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistorialInquilinoScreen(
@@ -205,19 +205,19 @@ fun HistorialInquilinoScreen(
     val user = authState.user ?: return
     val payments by paymentViewModel.payments.collectAsState()
     val myPayments = payments.filter { it.inquilinoId == user.id }
- 
+
     var filterStatus by remember { mutableStateOf<PaymentStatus?>(null) }
     var filterAnio by remember { mutableStateOf<Int?>(null) }
- 
+
     val anios = myPayments.map { it.anio }.distinct().sortedDescending()
- 
+
     val filteredPayments = myPayments
         .let { list -> if (filterStatus != null) list.filter { it.estado == filterStatus } else list }
         .let { list -> if (filterAnio != null) list.filter { it.anio == filterAnio } else list }
- 
+
     val totalPaid = filteredPayments.filter { it.estado == PaymentStatus.APROBADO }.sumOf { it.monto }
     val currency = filteredPayments.firstOrNull()?.moneda ?: myPayments.firstOrNull()?.moneda
- 
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -227,7 +227,7 @@ fun HistorialInquilinoScreen(
         }
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
- 
+
             // Summary card
             Card(
                 modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -256,7 +256,7 @@ fun HistorialInquilinoScreen(
                     Icon(Icons.Default.TrendingUp, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(32.dp))
                 }
             }
- 
+
             // Filters — status
             Row(
                 modifier = Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
@@ -267,7 +267,7 @@ fun HistorialInquilinoScreen(
                 FilterChip(selected = filterStatus == PaymentStatus.PENDIENTE, onClick = { filterStatus = PaymentStatus.PENDIENTE }, label = { Text("Pendientes") })
                 FilterChip(selected = filterStatus == PaymentStatus.RECHAZADO, onClick = { filterStatus = PaymentStatus.RECHAZADO }, label = { Text("Rechazados") })
             }
- 
+
             // Filters — year
             if (anios.isNotEmpty()) {
                 Row(
@@ -280,7 +280,7 @@ fun HistorialInquilinoScreen(
                     }
                 }
             }
- 
+
             if (filteredPayments.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     EmptyState(icon = Icons.Default.History, title = "Sin historial", subtitle = "Tus pagos aparecerán aquí una vez que los envíes.")
@@ -366,4 +366,3 @@ fun HistorialInquilinoScreen(
         }
     }
 }
- 

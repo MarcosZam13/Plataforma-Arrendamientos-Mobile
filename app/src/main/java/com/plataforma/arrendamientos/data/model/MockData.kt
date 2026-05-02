@@ -171,8 +171,84 @@ object MockData {
             anio = 2024,
             monto = 950.0,
             moneda = Currency.USD,
+            estado = PaymentStatus.RECHAZADO,
+            motivoRechazo = "El comprobante no corresponde al mes indicado",
+            fechaSubida = "2024-02-28T10:00:00",
+            fechaRevision = "2024-02-28T16:00:00"
+        ),
+        Payment(
+            id = "pay-4",
+            tipo = PaymentType.MENSUALIDAD,
+            contratoId = "contract-1",
+            propiedadId = "prop-1",
+            inquilinoId = "user-2",
+            duenoId = "user-1",
+            mes = 3,
+            anio = 2024,
+            monto = 950.0,
+            moneda = Currency.USD,
             estado = PaymentStatus.PENDIENTE,
-            fechaSubida = "2024-02-28T10:00:00"
+            fechaSubida = "2024-03-31T10:00:00"
+        )
+    )
+
+    // ─── Notificaciones mock ────────────────────────────────────────────────────
+    // user-1 = dueño, user-2 = inquilino
+
+    val MOCK_NOTIFICATIONS = mutableListOf(
+        AppNotification(
+            id = "notif-1",
+            userId = "user-1",
+            tipo = NotificationType.PAGO_RECIBIDO,
+            titulo = "Nuevo comprobante de pago",
+            mensaje = "María González subió el comprobante de marzo.",
+            leida = false,
+            fecha = "2024-03-31T10:00:00"
+        ),
+        AppNotification(
+            id = "notif-2",
+            userId = "user-1",
+            tipo = NotificationType.INVITACION_ACEPTADA,
+            titulo = "Invitación aceptada",
+            mensaje = "María González aceptó tu invitación para el apartamento en Escazú.",
+            leida = true,
+            fecha = "2024-01-01T08:00:00"
+        ),
+        AppNotification(
+            id = "notif-3",
+            userId = "user-1",
+            tipo = NotificationType.MENSAJE_NUEVO,
+            titulo = "Nuevo mensaje",
+            mensaje = "Tienes un mensaje nuevo de tu inquilina.",
+            leida = false,
+            fecha = "2024-03-30T15:00:00"
+        ),
+        AppNotification(
+            id = "notif-4",
+            userId = "user-2",
+            tipo = NotificationType.PAGO_APROBADO,
+            titulo = "Pago aprobado",
+            mensaje = "Tu comprobante de enero fue aprobado por el propietario.",
+            leida = false,
+            fecha = "2024-01-31T16:00:00"
+        ),
+        AppNotification(
+            id = "notif-5",
+            userId = "user-2",
+            tipo = NotificationType.PAGO_RECHAZADO,
+            titulo = "Comprobante rechazado",
+            mensaje = "Tu comprobante de febrero fue rechazado. Motivo: el comprobante no corresponde al mes indicado.",
+            leida = false,
+            fecha = "2024-02-28T16:00:00"
+        ),
+        AppNotification(
+            id = "notif-6",
+            userId = "user-2",
+            tipo = NotificationType.CONTRATO_ACTIVO,
+            titulo = "Contrato activo",
+            mensaje = "Tu contrato de arrendamiento está activo. Bienvenida.",
+            leida = true,
+            fecha = "2024-01-01T08:30:00"
         )
     )
 

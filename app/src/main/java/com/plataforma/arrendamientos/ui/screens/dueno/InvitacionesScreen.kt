@@ -1,5 +1,5 @@
 package com.plataforma.arrendamientos.ui.screens.dueno
- 
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -21,7 +21,7 @@ import com.plataforma.arrendamientos.ui.theme.*
 import com.plataforma.arrendamientos.viewmodel.AuthViewModel
 import com.plataforma.arrendamientos.viewmodel.InvitationViewModel
 import com.plataforma.arrendamientos.viewmodel.PropertyViewModel
- 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InvitacionesScreen(
@@ -33,10 +33,10 @@ fun InvitacionesScreen(
 ) {
     val authState by authViewModel.authState.collectAsState()
     val user = authState.user ?: return
- 
+
     var refreshKey by remember { mutableStateOf(0) }
     val invitations = remember(refreshKey) { invitationViewModel.getInvitationsByOwner(user.id) }
- 
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -81,7 +81,7 @@ fun InvitacionesScreen(
                         InvitationStatus.EXPIRADA -> Triple("Expirada", OnSurfaceVariantLight, BackgroundLight)
                         InvitationStatus.CANCELADA -> Triple("Cancelada", StatusRed, StatusRedContainer)
                     }
- 
+
                     Card(shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Row(
@@ -103,11 +103,11 @@ fun InvitacionesScreen(
                                 }
                                 StatusBadge(text = statusText, color = statusColor, containerColor = statusContainer)
                             }
- 
+
                             Spacer(Modifier.height(12.dp))
                             HorizontalDivider()
                             Spacer(Modifier.height(12.dp))
- 
+
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 Column {
                                     Text("Monto mensual", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -118,7 +118,7 @@ fun InvitacionesScreen(
                                     Text(formatPrice(invitation.montoDeposito, invitation.moneda), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
                                 }
                             }
- 
+
                             if (invitation.estado == InvitationStatus.PENDIENTE) {
                                 Spacer(Modifier.height(12.dp))
                                 OutlinedButton(
@@ -138,4 +138,3 @@ fun InvitacionesScreen(
         }
     }
 }
- 

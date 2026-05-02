@@ -1,5 +1,5 @@
 package com.plataforma.arrendamientos.ui.screens.dueno
- 
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -20,7 +20,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.plataforma.arrendamientos.ui.components.EmptyState
 import com.plataforma.arrendamientos.viewmodel.AuthViewModel
 import com.plataforma.arrendamientos.viewmodel.MessageViewModel
- 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MensajesScreen(
@@ -32,11 +32,11 @@ fun MensajesScreen(
     val user = authState.user ?: return
     val conversations by messageViewModel.conversations.collectAsState()
     val myConversations = messageViewModel.getConversationsByUser(user.id)
- 
+
     var selectedConversation by remember { mutableStateOf<String?>(null) }
     var messageText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
- 
+
     if (selectedConversation == null) {
         Scaffold(
             topBar = {
@@ -100,7 +100,7 @@ fun MensajesScreen(
         val messages = messageViewModel.getMessagesByConversation(selectedConversation!!)
         val conv = myConversations.find { it.id == selectedConversation }
         val receiverId = conv?.participants?.firstOrNull { it != user.id } ?: ""
- 
+
         Scaffold(
             topBar = {
                 TopAppBar(
