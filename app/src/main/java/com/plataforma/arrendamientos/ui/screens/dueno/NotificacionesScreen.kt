@@ -1,5 +1,5 @@
 package com.plataforma.arrendamientos.ui.screens.dueno
- 
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -21,7 +21,7 @@ import com.plataforma.arrendamientos.ui.navigation.Screen
 import com.plataforma.arrendamientos.ui.theme.*
 import com.plataforma.arrendamientos.viewmodel.AuthViewModel
 import com.plataforma.arrendamientos.viewmodel.NotificationViewModel
- 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotificacionesScreen(
@@ -33,13 +33,13 @@ fun NotificacionesScreen(
     val authState by authViewModel.authState.collectAsState()
     val user = authState.user ?: return
     val allNotifications by notificationViewModel.notifications.collectAsState()
- 
+
     val myNotifications = allNotifications.filter { it.userId == user.id }
     val unreadCount = myNotifications.count { !it.leida }
- 
+
     var filterUnread by remember { mutableStateOf(false) }
     val displayed = if (filterUnread) myNotifications.filter { !it.leida } else myNotifications
- 
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -82,7 +82,7 @@ fun NotificacionesScreen(
                     label = { Text("No leídas${if (unreadCount > 0) " ($unreadCount)" else ""}") }
                 )
             }
- 
+
             if (displayed.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     EmptyState(
@@ -112,7 +112,7 @@ fun NotificacionesScreen(
         }
     }
 }
- 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotificacionesInquilinoScreen(
@@ -124,13 +124,13 @@ fun NotificacionesInquilinoScreen(
     val authState by authViewModel.authState.collectAsState()
     val user = authState.user ?: return
     val allNotifications by notificationViewModel.notifications.collectAsState()
- 
+
     val myNotifications = allNotifications.filter { it.userId == user.id }
     val unreadCount = myNotifications.count { !it.leida }
- 
+
     var filterUnread by remember { mutableStateOf(false) }
     val displayed = if (filterUnread) myNotifications.filter { !it.leida } else myNotifications
- 
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -172,7 +172,7 @@ fun NotificacionesInquilinoScreen(
                     label = { Text("No leídas${if (unreadCount > 0) " ($unreadCount)" else ""}") }
                 )
             }
- 
+
             if (displayed.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     EmptyState(
@@ -202,7 +202,7 @@ fun NotificacionesInquilinoScreen(
         }
     }
 }
- 
+
 @Composable
 private fun NotificationCard(
     notif: AppNotification,
@@ -222,7 +222,7 @@ private fun NotificationCard(
             Triple(Icons.Default.Description, MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.primaryContainer)
         else -> Triple(Icons.Default.Info, MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.primaryContainer)
     }
- 
+
     Card(
         shape = RoundedCornerShape(12.dp),
         modifier = Modifier.fillMaxWidth().clickable { onTap() },
@@ -254,7 +254,7 @@ private fun NotificationCard(
         }
     }
 }
- 
+
 private fun notifRoute(tipo: NotificationType, isDueno: Boolean): String? = when (tipo) {
     NotificationType.PAGO_RECIBIDO -> if (isDueno) Screen.PagosRecibidos.route else null
     NotificationType.PAGO_APROBADO, NotificationType.PAGO_RECHAZADO ->

@@ -11,26 +11,16 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.credentials.CredentialManager
-import androidx.credentials.GetCredentialRequest
-import androidx.credentials.exceptions.GetCredentialException
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.google.android.libraries.identity.googleid.GetGoogleIdOption
-import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.plataforma.arrendamientos.data.model.User
 import com.plataforma.arrendamientos.data.model.UserRole
 import com.plataforma.arrendamientos.viewmodel.AuthViewModel
-import kotlinx.coroutines.launch
-
-// TODO: mismo WEB_CLIENT_ID que en LoginScreen
-private const val WEB_CLIENT_ID = "TU_WEB_CLIENT_ID_AQUI"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,8 +31,6 @@ fun RegistroScreen(
     authViewModel: AuthViewModel = hiltViewModel()
 ) {
     val authState by authViewModel.authState.collectAsState()
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
 
     var nombre by remember { mutableStateOf("") }
     var correo by remember { mutableStateOf("") }
@@ -52,12 +40,7 @@ fun RegistroScreen(
     var selectedRole by remember { mutableStateOf(UserRole.INQUILINO) }
     var passwordVisible by remember { mutableStateOf(false) }
     var passwordError by remember { mutableStateOf<String?>(null) }
-    var googleLoading by remember { mutableStateOf(false) }
-
     var showRoleDialog by remember { mutableStateOf(false) }
-    var pendingGoogleNombre by remember { mutableStateOf("") }
-    var pendingGoogleCorreo by remember { mutableStateOf("") }
-    var pendingGoogleId by remember { mutableStateOf("") }
 
     LaunchedEffect(authState.user) {
         authState.user?.let { onRegisterSuccess(it) }
@@ -65,13 +48,13 @@ fun RegistroScreen(
 
     if (showRoleDialog) {
         RoleSelectionDialog(
-            nombre = pendingGoogleNombre,
+            nombre = "Usuario Google",
             onRoleSelected = { rol ->
                 showRoleDialog = false
                 authViewModel.loginOrRegisterWithGoogle(
-                    nombre = pendingGoogleNombre,
-                    correo = pendingGoogleCorreo,
-                    googleId = pendingGoogleId,
+                    nombre = "Usuario Google",
+                    correo = "google-user@gmail.com",
+                    googleId = "google-mock-id",
                     rol = rol,
                     onSuccess = { onRegisterSuccess(it) }
                 )
@@ -101,7 +84,6 @@ fun RegistroScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(24.dp))
-
             Text("Crea tu cuenta", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
             Text(
                 "Únete a la plataforma de arrendamientos más completa de Costa Rica",
@@ -109,10 +91,8 @@ fun RegistroScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
-
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Error
             authState.error?.let { error ->
                 Card(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
@@ -127,81 +107,41 @@ fun RegistroScreen(
                 Spacer(Modifier.height(12.dp))
             }
 
-            // Google Sign-In
+            // Google Sign-In button
             OutlinedButton(
-                onClick = {
-                    scope.launch {
-                        googleLoading = true
-                        try {
-                            val credentialManager = CredentialManager.create(context)
-                            val googleIdOption = GetGoogleIdOption.Builder()
-                                .setFilterByAuthorizedAccounts(false)
-                                .setServerClientId(WEB_CLIENT_ID)
-                                .build()
-                            val request = GetCredentialRequest.Builder()
-                                .addCredentialOption(googleIdOption)
-                                .build()
-                            val result = credentialManager.getCredential(context, request)
-                            val credential = result.credential
-                            if (credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
-                                val googleCred = GoogleIdTokenCredential.createFrom(credential.data)
-                                pendingGoogleNombre = googleCred.displayName ?: googleCred.id.substringBefore("@")
-                                pendingGoogleCorreo = googleCred.id
-                                pendingGoogleId = googleCred.id.hashCode().toString()
-                                showRoleDialog = true
-                            }
-                        } catch (e: GetCredentialException) {
-                            // Cancelado o no configurado
-                        } catch (e: Exception) {
-                            // Error inesperado
-                        } finally {
-                            googleLoading = false
-                        }
-                    }
-                },
+                onClick = { showRoleDialog = true },
                 modifier = Modifier.fillMaxWidth().height(52.dp),
-                enabled = !googleLoading,
                 shape = RoundedCornerShape(12.dp)
             ) {
-                if (googleLoading) {
-                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                } else {
-                    Icon(Icons.Default.AccountCircle, null, modifier = Modifier.size(20.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text("Registrarse con Google", fontWeight = FontWeight.Medium)
-                }
+                Icon(Icons.Default.AccountCircle, null, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Registrarse con Google", fontWeight = FontWeight.Medium)
             }
 
             Spacer(Modifier.height(16.dp))
-
-            // Divider
             Row(verticalAlignment = Alignment.CenterVertically) {
                 HorizontalDivider(modifier = Modifier.weight(1f))
                 Text("  o regístrate con correo  ", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 HorizontalDivider(modifier = Modifier.weight(1f))
             }
-
             Spacer(Modifier.height(16.dp))
 
-            // Name
             OutlinedTextField(
                 value = nombre,
                 onValueChange = { nombre = it },
                 label = { Text("Nombre completo") },
-                leadingIcon = { Icon(Icons.Default.Person, null) },
+                leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp)
             )
-
             Spacer(Modifier.height(12.dp))
 
-            // Email
             OutlinedTextField(
                 value = correo,
                 onValueChange = { correo = it; correoError = null; authViewModel.clearError() },
                 label = { Text("Correo electrónico") },
-                leadingIcon = { Icon(Icons.Default.Email, null) },
+                leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
                 isError = correoError != null,
                 supportingText = correoError?.let { { Text(it) } },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
@@ -209,15 +149,13 @@ fun RegistroScreen(
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp)
             )
-
             Spacer(Modifier.height(12.dp))
 
-            // Password
             OutlinedTextField(
                 value = contrasena,
                 onValueChange = { contrasena = it; passwordError = null },
                 label = { Text("Contraseña") },
-                leadingIcon = { Icon(Icons.Default.Lock, null) },
+                leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                 trailingIcon = {
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
                         Icon(if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility, null)
@@ -229,15 +167,13 @@ fun RegistroScreen(
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp)
             )
-
             Spacer(Modifier.height(12.dp))
 
-            // Confirm password
             OutlinedTextField(
                 value = confirmarContrasena,
                 onValueChange = { confirmarContrasena = it; passwordError = null },
                 label = { Text("Confirmar contraseña") },
-                leadingIcon = { Icon(Icons.Default.Lock, null) },
+                leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 isError = passwordError != null,
@@ -248,10 +184,9 @@ fun RegistroScreen(
             )
 
             Spacer(Modifier.height(20.dp))
-
-            // Role selector
             Text("¿Cuál es tu rol?", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(8.dp))
+
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 RoleCard(
                     title = "Soy propietario",
@@ -300,14 +235,12 @@ fun RegistroScreen(
             }
 
             Spacer(Modifier.height(16.dp))
-
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("¿Ya tienes cuenta?", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 TextButton(onClick = onLoginClick) {
                     Text("Inicia sesión", fontWeight = FontWeight.SemiBold)
                 }
             }
-
             Spacer(Modifier.height(24.dp))
         }
     }

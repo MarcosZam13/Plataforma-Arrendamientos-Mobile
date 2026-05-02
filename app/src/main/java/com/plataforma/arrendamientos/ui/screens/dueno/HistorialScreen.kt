@@ -1,5 +1,5 @@
 package com.plataforma.arrendamientos.ui.screens.dueno
- 
+
 import android.content.Intent
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -22,7 +22,7 @@ import com.plataforma.arrendamientos.ui.components.*
 import com.plataforma.arrendamientos.ui.theme.*
 import com.plataforma.arrendamientos.viewmodel.AuthViewModel
 import com.plataforma.arrendamientos.viewmodel.PaymentViewModel
- 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistorialScreen(
@@ -35,19 +35,19 @@ fun HistorialScreen(
     val payments by paymentViewModel.payments.collectAsState()
     val myPayments = payments.filter { it.duenoId == user.id }
     val context = LocalContext.current
- 
+
     var filterStatus by remember { mutableStateOf<PaymentStatus?>(null) }
     var filterAnio by remember { mutableStateOf<Int?>(null) }
- 
+
     val anios = myPayments.map { it.anio }.distinct().sortedDescending()
- 
+
     val filteredPayments = myPayments
         .let { list -> if (filterStatus != null) list.filter { it.estado == filterStatus } else list }
         .let { list -> if (filterAnio != null) list.filter { it.anio == filterAnio } else list }
- 
+
     val totalIncome = filteredPayments.filter { it.estado == PaymentStatus.APROBADO }.sumOf { it.monto }
     val currency = filteredPayments.firstOrNull()?.moneda ?: myPayments.firstOrNull()?.moneda
- 
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -80,7 +80,7 @@ fun HistorialScreen(
         }
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
- 
+
             // Summary card
             Card(
                 modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -113,7 +113,7 @@ fun HistorialScreen(
                     }
                 }
             }
- 
+
             // Filters — status
             Row(
                 modifier = Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
@@ -124,7 +124,7 @@ fun HistorialScreen(
                 FilterChip(selected = filterStatus == PaymentStatus.PENDIENTE, onClick = { filterStatus = PaymentStatus.PENDIENTE }, label = { Text("Pendientes") })
                 FilterChip(selected = filterStatus == PaymentStatus.RECHAZADO, onClick = { filterStatus = PaymentStatus.RECHAZADO }, label = { Text("Rechazados") })
             }
- 
+
             // Filters — year
             if (anios.isNotEmpty()) {
                 Row(
@@ -137,7 +137,7 @@ fun HistorialScreen(
                     }
                 }
             }
- 
+
             if (filteredPayments.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     EmptyState(icon = Icons.Default.History, title = "Sin resultados", subtitle = "No hay pagos con los filtros seleccionados.")
@@ -212,4 +212,3 @@ fun HistorialScreen(
         }
     }
 }
- 

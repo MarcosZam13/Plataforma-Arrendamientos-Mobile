@@ -23,7 +23,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.plataforma.arrendamientos.data.model.User
-import com.plataforma.arrendamientos.ui.theme.Primary
+import com.plataforma.arrendamientos.data.model.UserRole
 import com.plataforma.arrendamientos.viewmodel.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -42,16 +42,33 @@ fun LoginScreen(
     var correoError by remember { mutableStateOf<String?>(null) }
     var contrasena by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    var showRoleDialog by remember { mutableStateOf(false) }
 
-    // Observe login success
     LaunchedEffect(authState.user) {
         authState.user?.let { onLoginSuccess(it) }
+    }
+
+    if (showRoleDialog) {
+        RoleSelectionDialog(
+            nombre = "Usuario Google",
+            onRoleSelected = { rol ->
+                showRoleDialog = false
+                authViewModel.loginOrRegisterWithGoogle(
+                    nombre = "Usuario Google",
+                    correo = "google-user@gmail.com",
+                    googleId = "google-mock-id",
+                    rol = rol,
+                    onSuccess = { onLoginSuccess(it) }
+                )
+            },
+            onDismiss = { showRoleDialog = false }
+        )
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Iniciar sesión") },
+                title = {},
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
@@ -68,132 +85,61 @@ fun LoginScreen(
                 .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(Modifier.height(24.dp))
+            Icon(Icons.Default.Home, null, modifier = Modifier.size(56.dp), tint = MaterialTheme.colorScheme.primary)
+            Spacer(Modifier.height(12.dp))
+            Text("Iniciar sesión", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Text("Bienvenido de vuelta", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.height(28.dp))
 
-            // Logo area
-            Surface(
-                color = MaterialTheme.colorScheme.primaryContainer,
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.size(72.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        Icons.Default.Home,
-                        contentDescription = null,
-                        tint = Primary,
-                        modifier = Modifier.size(36.dp)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Text(
-                text = "Bienvenido de vuelta",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = "Ingresa tus credenciales para continuar",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // Error message
             authState.error?.let { error ->
                 Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
-                    ),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+                    shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Row(
-                        modifier = Modifier.padding(12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            Icons.Default.Error,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                        Text(
-                            text = error,
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
+                    Text(error, modifier = Modifier.padding(12.dp), color = MaterialTheme.colorScheme.onErrorContainer, style = MaterialTheme.typography.bodySmall)
                 }
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(Modifier.height(12.dp))
             }
 
-            // Email field
             OutlinedTextField(
                 value = correo,
                 onValueChange = { correo = it; correoError = null; authViewModel.clearError() },
                 label = { Text("Correo electrónico") },
-                leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
+                leadingIcon = { Icon(Icons.Default.Email, null) },
                 isError = correoError != null,
                 supportingText = correoError?.let { { Text(it) } },
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Email,
-                    imeAction = ImeAction.Next
-                ),
-                keyboardActions = KeyboardActions(
-                    onNext = { focusManager.moveFocus(FocusDirection.Down) }
-                ),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
+                keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp)
             )
+            Spacer(Modifier.height(12.dp))
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Password field
             OutlinedTextField(
                 value = contrasena,
                 onValueChange = { contrasena = it; authViewModel.clearError() },
                 label = { Text("Contraseña") },
-                leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
+                leadingIcon = { Icon(Icons.Default.Lock, null) },
                 trailingIcon = {
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                        Icon(
-                            if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                            contentDescription = if (passwordVisible) "Ocultar" else "Mostrar"
-                        )
+                        Icon(if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility, null)
                     }
                 },
-                visualTransformation = if (passwordVisible) VisualTransformation.None
-                                       else PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Password,
-                    imeAction = ImeAction.Done
-                ),
-                keyboardActions = KeyboardActions(
-                    onDone = {
-                        focusManager.clearFocus()
-                        authViewModel.login(correo, contrasena) {}
-                    }
-                ),
+                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp)
             )
-
-            // Forgot password
-            TextButton(
-                onClick = onForgotPassword,
-                modifier = Modifier.align(Alignment.End)
-            ) {
-                Text("¿Olvidaste tu contraseña?", style = MaterialTheme.typography.labelMedium)
+            TextButton(onClick = onForgotPassword, modifier = Modifier.align(Alignment.End)) {
+                Text("¿Olvidaste tu contraseña?")
             }
+            Spacer(Modifier.height(8.dp))
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Login button
             Button(
                 onClick = {
                     focusManager.clearFocus()
@@ -203,76 +149,81 @@ fun LoginScreen(
                         authViewModel.login(correo, contrasena) {}
                     }
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
+                modifier = Modifier.fillMaxWidth().height(52.dp),
                 enabled = !authState.isLoading && correo.isNotBlank() && contrasena.isNotBlank(),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 if (authState.isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        strokeWidth = 2.dp,
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
                 } else {
                     Text("Iniciar sesión", fontWeight = FontWeight.SemiBold)
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(Modifier.height(16.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                HorizontalDivider(modifier = Modifier.weight(1f))
+                Text("  o  ", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                HorizontalDivider(modifier = Modifier.weight(1f))
+            }
+            Spacer(Modifier.height(16.dp))
 
-            // Demo credentials hint
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                ),
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(10.dp)
+            OutlinedButton(
+                onClick = { showRoleDialog = true },
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Column(modifier = Modifier.padding(14.dp)) {
-                    Text(
-                        text = "Credenciales de prueba",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        text = "Dueño: carlos@example.com",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = "Inquilino: maria@example.com",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = "Contraseña: 123456",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                Icon(Icons.Default.AccountCircle, null, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Continuar con Google", fontWeight = FontWeight.Medium)
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Register link
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    "¿No tienes cuenta?",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                TextButton(onClick = onRegisterClick) {
-                    Text("Regístrate", fontWeight = FontWeight.SemiBold)
-                }
+            Spacer(Modifier.height(24.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("¿No tienes cuenta?", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                TextButton(onClick = onRegisterClick) { Text("Regístrate") }
             }
-
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(Modifier.height(24.dp))
         }
     }
+}
+
+@Composable
+fun RoleSelectionDialog(
+    nombre: String,
+    onRoleSelected: (UserRole) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Default.AccountCircle, null) },
+        title = { Text("¡Hola, $nombre!") },
+        text = {
+            Column {
+                Text("¿Cómo quieres usar la plataforma?", style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center)
+                Spacer(Modifier.height(16.dp))
+                Card(onClick = { onRoleSelected(UserRole.INQUILINO) }, shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()) {
+                    Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Icon(Icons.Default.Person, null, tint = MaterialTheme.colorScheme.primary)
+                        Column {
+                            Text("Inquilino", fontWeight = FontWeight.SemiBold)
+                            Text("Busco una propiedad para arrendar", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+                Card(onClick = { onRoleSelected(UserRole.DUENO) }, shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()) {
+                    Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Icon(Icons.Default.Home, null, tint = MaterialTheme.colorScheme.primary)
+                        Column {
+                            Text("Propietario", fontWeight = FontWeight.SemiBold)
+                            Text("Tengo propiedades para arrendar", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
+    )
 }

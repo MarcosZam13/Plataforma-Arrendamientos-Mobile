@@ -1,5 +1,5 @@
 package com.plataforma.arrendamientos.ui.screens.inquilino
- 
+
 import android.content.Intent
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -23,7 +23,7 @@ import com.plataforma.arrendamientos.ui.components.formatPrice
 import com.plataforma.arrendamientos.ui.theme.*
 import com.plataforma.arrendamientos.viewmodel.AuthViewModel
 import com.plataforma.arrendamientos.viewmodel.PropertyViewModel
- 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MiContratoScreen(
@@ -34,10 +34,10 @@ fun MiContratoScreen(
     val authState by authViewModel.authState.collectAsState()
     val user = authState.user ?: return
     val context = LocalContext.current
- 
+
     val contract = MockData.MOCK_CONTRACT.takeIf { it.inquilinoId == user.id || true }
     val property = contract?.let { propertyViewModel.getPropertyById(it.propiedadId) }
- 
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -150,7 +150,7 @@ fun MiContratoScreen(
                         )
                     }
                 }
- 
+
                 // Property info
                 property?.let { prop ->
                     Card(shape = RoundedCornerShape(12.dp)) {
@@ -165,7 +165,7 @@ fun MiContratoScreen(
                         }
                     }
                 }
- 
+
                 // Contract details
                 Card(shape = RoundedCornerShape(12.dp)) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -174,7 +174,7 @@ fun MiContratoScreen(
                         ContractDetailRow("Fecha de inicio", contract.fechaInicio)
                         ContractDetailRow("Monto mensual", formatPrice(contract.montoMensual, contract.moneda))
                         ContractDetailRow("Depósito", formatPrice(contract.montoDeposito, contract.moneda))
- 
+
                         // Deposit status with color indicator
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             Text("Estado depósito", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -186,11 +186,11 @@ fun MiContratoScreen(
                             }
                             Text(depositText, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, color = depositColor)
                         }
- 
+
                         ContractDetailRow("ID contrato", "#${contract.id.takeLast(6)}")
                     }
                 }
- 
+
                 // Next payment card
                 Card(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
@@ -208,7 +208,7 @@ fun MiContratoScreen(
                         Icon(Icons.Default.CalendarMonth, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(32.dp))
                     }
                 }
- 
+
                 // Share button
                 OutlinedButton(
                     onClick = {
@@ -234,13 +234,13 @@ fun MiContratoScreen(
                     Spacer(Modifier.width(8.dp))
                     Text("Compartir / Descargar contrato")
                 }
- 
+
                 Spacer(Modifier.height(8.dp))
             }
         }
     }
 }
- 
+
 @Composable
 private fun ContractDetailRow(label: String, value: String) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -248,4 +248,3 @@ private fun ContractDetailRow(label: String, value: String) {
         Text(value, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
     }
 }
- 
