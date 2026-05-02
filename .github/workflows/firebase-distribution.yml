@@ -28,9 +28,7 @@ jobs:
       - name: Compilar APK debug
         env:
           APIM_SUBSCRIPTION_KEY: ${{ secrets.APIM_SUBSCRIPTION_KEY }}
-        run: |
-          chmod +x gradlew
-          ./gradlew assembleDebug
+        run: gradle assembleDebug
 
       # 4. Subir APK como artefacto de GitHub Actions
       - name: Subir APK como artefacto
