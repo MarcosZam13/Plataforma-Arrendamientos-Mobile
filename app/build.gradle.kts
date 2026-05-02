@@ -1,3 +1,5 @@
+import java.util.Properties
+
 // Redirige el build fuera de OneDrive solo en local (en CI usa el directorio por defecto)
 if (System.getenv("CI") == null) {
     layout.buildDirectory.set(file("C:/AndroidBuild/PlataformaArrendamientos/app"))
@@ -12,6 +14,15 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
+val localProps = Properties()
+val localPropsFile = rootProject.file("local.properties")
+if (localPropsFile.exists()) {
+    localProps.load(localPropsFile.inputStream())
+}
+val apimKey: String = localProps.getProperty("APIM_SUBSCRIPTION_KEY")
+    ?: System.getenv("APIM_SUBSCRIPTION_KEY")
+    ?: ""
+
 android {
     namespace = "com.plataforma.arrendamientos"
     compileSdk = 35
@@ -25,7 +36,8 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("String", "API_BASE_URL", "\"https://your-azure-apim.azure-api.net/\"")
+        buildConfigField("String", "API_BASE_URL", "\"https://plataforma-arrendamientos-api.azure-api.net/api/\"")
+        buildConfigField("String", "APIM_SUBSCRIPTION_KEY", "\"$apimKey\"")
     }
 
     buildTypes {
@@ -41,8 +53,8 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    kotlinOptions {
-        jvmTarget = "11"
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
     }
     buildFeatures {
         compose = true

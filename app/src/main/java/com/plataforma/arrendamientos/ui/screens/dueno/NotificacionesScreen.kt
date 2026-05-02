@@ -26,9 +26,7 @@ fun NotificacionesScreen(
 ) {
     val authState by authViewModel.authState.collectAsState()
     val user = authState.user ?: return
-
-    // Reusing same component for both roles
-    NotificacionesContent(userId = user.id, onBack = onBack)
+    NotificacionesContent(userId = user.id, isDueno = true, onBack = onBack)
 }
 
 @Composable
@@ -38,18 +36,21 @@ fun NotificacionesInquilinoScreen(
 ) {
     val authState by authViewModel.authState.collectAsState()
     val user = authState.user ?: return
-    NotificacionesContent(userId = user.id, onBack = onBack)
+    NotificacionesContent(userId = user.id, isDueno = false, onBack = onBack)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun NotificacionesContent(userId: String, onBack: () -> Unit) {
-    // Mock notifications for demo
-    val notifications = remember {
-        listOf(
-            Triple(NotificationType.PAGO_RECIBIDO, "Nuevo comprobante de pago", "El inquilino ha subido un comprobante."),
-            Triple(NotificationType.INVITACION_ACEPTADA, "Invitación aceptada", "El inquilino ha aceptado tu invitación."),
-            Triple(NotificationType.MENSAJE_NUEVO, "Nuevo mensaje", "Tienes un mensaje de tu inquilino.")
+private fun NotificacionesContent(userId: String, isDueno: Boolean, onBack: () -> Unit) {
+    val notifications = remember(isDueno) {
+        if (isDueno) listOf(
+            Triple(NotificationType.PAGO_RECIBIDO,      "Nuevo comprobante de pago",  "El inquilino ha subido un comprobante de pago."),
+            Triple(NotificationType.INVITACION_ACEPTADA, "Invitación aceptada",        "El inquilino aceptó tu invitación de arrendamiento."),
+            Triple(NotificationType.MENSAJE_NUEVO,       "Nuevo mensaje",              "Tienes un mensaje nuevo de tu inquilino.")
+        ) else listOf(
+            Triple(NotificationType.PAGO_APROBADO,  "Pago aprobado",           "El propietario aprobó tu comprobante de pago."),
+            Triple(NotificationType.MENSAJE_NUEVO,  "Nuevo mensaje",           "Tienes un mensaje nuevo de tu propietario."),
+            Triple(NotificationType.CONTRATO_ACTIVO, "Contrato activo",         "Tu contrato de arrendamiento está vigente.")
         )
     }
 
@@ -73,6 +74,7 @@ private fun NotificacionesContent(userId: String, onBack: () -> Unit) {
                         NotificationType.PAGO_RECHAZADO -> Triple(Icons.Default.Cancel, StatusRed, StatusRedContainer)
                         NotificationType.INVITACION_ENVIADA, NotificationType.INVITACION_ACEPTADA -> Triple(Icons.Default.MailOutline, MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.primaryContainer)
                         NotificationType.MENSAJE_NUEVO -> Triple(Icons.Default.Message, StatusAmber, StatusAmberContainer)
+                        NotificationType.CONTRATO_ACTIVO, NotificationType.CONTRATO_FINALIZADO -> Triple(Icons.Default.Description, MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.primaryContainer)
                         else -> Triple(Icons.Default.Info, MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.primaryContainer)
                     }
                     Card(shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()) {

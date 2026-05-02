@@ -6,6 +6,7 @@ import com.plataforma.arrendamientos.data.model.AuthState
 import com.plataforma.arrendamientos.data.model.User
 import com.plataforma.arrendamientos.data.model.UserRole
 import com.plataforma.arrendamientos.data.repository.AuthRepository
+import com.plataforma.arrendamientos.data.repository.DataRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,7 +17,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val dataRepository: DataRepository
 ) : ViewModel() {
 
     private val _authState = MutableStateFlow(AuthState())
@@ -27,10 +29,12 @@ class AuthViewModel @Inject constructor(
     }
 
     init {
-        // Observe persisted session
         viewModelScope.launch {
             authRepository.currentUser.collect { user ->
                 _authState.update { it.copy(user = user) }
+                if (user != null) {
+                    dataRepository.loadDataForUser(user.id)
+                }
             }
         }
     }
@@ -42,6 +46,7 @@ class AuthViewModel @Inject constructor(
             result.fold(
                 onSuccess = { user ->
                     _authState.update { it.copy(user = user, isLoading = false) }
+                    dataRepository.loadDataForUser(user.id)
                     onSuccess()
                 },
                 onFailure = { e ->
@@ -64,6 +69,7 @@ class AuthViewModel @Inject constructor(
             result.fold(
                 onSuccess = { user ->
                     _authState.update { it.copy(user = user, isLoading = false) }
+                    dataRepository.loadDataForUser(user.id)
                     onSuccess()
                 },
                 onFailure = { e ->
@@ -76,6 +82,7 @@ class AuthViewModel @Inject constructor(
     fun logout(onComplete: () -> Unit) {
         viewModelScope.launch {
             authRepository.logout()
+            dataRepository.clearUserData()
             _authState.update { AuthState() }
             onComplete()
         }

@@ -27,12 +27,14 @@ import com.plataforma.arrendamientos.viewmodel.AuthViewModel
 fun RegistroScreen(
     onRegisterSuccess: (User) -> Unit,
     onLoginClick: () -> Unit,
+    onBack: () -> Unit,
     authViewModel: AuthViewModel = hiltViewModel()
 ) {
     val authState by authViewModel.authState.collectAsState()
 
     var nombre by remember { mutableStateOf("") }
     var correo by remember { mutableStateOf("") }
+    var correoError by remember { mutableStateOf<String?>(null) }
     var contrasena by remember { mutableStateOf("") }
     var confirmarContrasena by remember { mutableStateOf("") }
     var selectedRole by remember { mutableStateOf(UserRole.INQUILINO) }
@@ -49,7 +51,7 @@ fun RegistroScreen(
             TopAppBar(
                 title = { Text("Crear cuenta") },
                 navigationIcon = {
-                    IconButton(onClick = onLoginClick) {
+                    IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
                     }
                 }
@@ -111,9 +113,11 @@ fun RegistroScreen(
             // Email
             OutlinedTextField(
                 value = correo,
-                onValueChange = { correo = it; authViewModel.clearError() },
+                onValueChange = { correo = it; correoError = null; authViewModel.clearError() },
                 label = { Text("Correo electrónico") },
                 leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
+                isError = correoError != null,
+                supportingText = correoError?.let { { Text(it) } },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
@@ -198,6 +202,10 @@ fun RegistroScreen(
 
             Button(
                 onClick = {
+                    if (!android.util.Patterns.EMAIL_ADDRESS.matcher(correo).matches()) {
+                        correoError = "Ingresa un correo electrónico válido"
+                        return@Button
+                    }
                     passwordError = when {
                         contrasena.length < 6 -> "La contraseña debe tener al menos 6 caracteres"
                         contrasena != confirmarContrasena -> "Las contraseñas no coinciden"
