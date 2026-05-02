@@ -24,17 +24,15 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
-      # 3. Configurar Gradle y generar wrapper
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
-
-      # 4. Compilar APK debug
+      # 3. Dar permisos y compilar APK debug
       - name: Compilar APK debug
         env:
           APIM_SUBSCRIPTION_KEY: ${{ secrets.APIM_SUBSCRIPTION_KEY }}
-        run: gradle assembleDebug
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug
 
-      # 5. Subir APK como artefacto de GitHub Actions
+      # 4. Subir APK como artefacto de GitHub Actions
       - name: Subir APK como artefacto
         uses: actions/upload-artifact@v4
         with:
@@ -42,7 +40,7 @@ jobs:
           path: app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
 
-      # 6. Distribuir via Firebase App Distribution
+      # 5. Distribuir via Firebase App Distribution
       - name: Distribuir via Firebase App Distribution
         uses: wzieba/Firebase-Distribution-Github-Action@v1
         with:
