@@ -208,7 +208,7 @@ fun LandingScreen(
 
             // Footer
             Text(
-                text = "© 2024 Plataforma de Arrendamientos Costa Rica",
+                text = "© 2026 Plataforma de Arrendamientos Costa Rica",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,

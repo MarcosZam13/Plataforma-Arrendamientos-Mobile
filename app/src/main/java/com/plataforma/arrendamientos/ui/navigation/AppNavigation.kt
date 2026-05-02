@@ -44,7 +44,8 @@ fun AppNavigation() {
                     }
                 },
                 onRegisterClick = { navController.navigate(Screen.Registro.route) },
-                onForgotPassword = { navController.navigate(Screen.RecuperarContrasena.route) }
+                onForgotPassword = { navController.navigate(Screen.RecuperarContrasena.route) },
+                onBack = { navController.popBackStack() }
             )
         }
 
@@ -57,7 +58,8 @@ fun AppNavigation() {
                         popUpTo(Screen.Landing.route) { inclusive = true }
                     }
                 },
-                onLoginClick = { navController.navigate(Screen.Login.route) }
+                onLoginClick = { navController.navigate(Screen.Login.route) },
+                onBack = { navController.popBackStack() }
             )
         }
 
@@ -194,7 +196,8 @@ fun AppNavigation() {
                         }
                     }
                 },
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onNotificaciones = { navController.navigate(Screen.NotificacionesDueno.route) }
             )
         }
 
@@ -252,7 +255,8 @@ fun AppNavigation() {
                         }
                     }
                 },
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onNotificaciones = { navController.navigate(Screen.NotificacionesInquilino.route) }
             )
         }
     }

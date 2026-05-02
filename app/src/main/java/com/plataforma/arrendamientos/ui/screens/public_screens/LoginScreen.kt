@@ -32,12 +32,14 @@ fun LoginScreen(
     onLoginSuccess: (User) -> Unit,
     onRegisterClick: () -> Unit,
     onForgotPassword: () -> Unit,
+    onBack: () -> Unit,
     authViewModel: AuthViewModel = hiltViewModel()
 ) {
     val authState by authViewModel.authState.collectAsState()
     val focusManager = LocalFocusManager.current
 
     var correo by remember { mutableStateOf("") }
+    var correoError by remember { mutableStateOf<String?>(null) }
     var contrasena by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
 
@@ -51,7 +53,7 @@ fun LoginScreen(
             TopAppBar(
                 title = { Text("Iniciar sesión") },
                 navigationIcon = {
-                    IconButton(onClick = onRegisterClick) {
+                    IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
                     }
                 }
@@ -131,9 +133,11 @@ fun LoginScreen(
             // Email field
             OutlinedTextField(
                 value = correo,
-                onValueChange = { correo = it; authViewModel.clearError() },
+                onValueChange = { correo = it; correoError = null; authViewModel.clearError() },
                 label = { Text("Correo electrónico") },
                 leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
+                isError = correoError != null,
+                supportingText = correoError?.let { { Text(it) } },
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Email,
                     imeAction = ImeAction.Next
@@ -193,7 +197,11 @@ fun LoginScreen(
             Button(
                 onClick = {
                     focusManager.clearFocus()
-                    authViewModel.login(correo, contrasena) {}
+                    if (!android.util.Patterns.EMAIL_ADDRESS.matcher(correo).matches()) {
+                        correoError = "Ingresa un correo electrónico válido"
+                    } else {
+                        authViewModel.login(correo, contrasena) {}
+                    }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
