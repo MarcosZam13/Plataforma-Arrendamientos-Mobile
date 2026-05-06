@@ -252,6 +252,75 @@ object MockData {
         )
     )
 
+    // ─── Conversaciones mock ────────────────────────────────────────────────────
+
+    val MOCK_CONVERSATIONS = mutableListOf(
+        Conversation(
+            id = "conv-1",
+            participants = listOf("user-1", "user-2"),
+            propertyId = "prop-1",
+            lastMessage = "Hola, ¿sigue disponible el apartamento?",
+            lastMessageAt = "2024-03-31T10:30:00",
+            unreadCount = mapOf("user-1" to 1, "user-2" to 0),
+            createdAt = "2024-01-01T08:00:00",
+            otherUserName = "María González",
+            propertyTitle = "Apartamento moderno en Escazú"
+        )
+    )
+
+    val MOCK_MESSAGES = mutableListOf(
+        Message(
+            id = "msg-1",
+            conversationId = "conv-1",
+            senderId = "user-2",
+            receiverId = "user-1",
+            content = "Hola, ¿sigue disponible el apartamento en Escazú?",
+            type = MessageType.TEXT,
+            status = MessageStatus.READ,
+            timestamp = "2024-01-01T08:00:00"
+        ),
+        Message(
+            id = "msg-2",
+            conversationId = "conv-1",
+            senderId = "user-1",
+            receiverId = "user-2",
+            content = "¡Hola María! Sí, sigue disponible. ¿Te gustaría coordinar una visita?",
+            type = MessageType.TEXT,
+            status = MessageStatus.READ,
+            timestamp = "2024-01-01T08:05:00"
+        ),
+        Message(
+            id = "msg-3",
+            conversationId = "conv-1",
+            senderId = "user-2",
+            receiverId = "user-1",
+            content = "Perfecto, ¿podría ser este fin de semana?",
+            type = MessageType.TEXT,
+            status = MessageStatus.READ,
+            timestamp = "2024-01-01T08:10:00"
+        ),
+        Message(
+            id = "msg-4",
+            conversationId = "conv-1",
+            senderId = "user-1",
+            receiverId = "user-2",
+            content = "Claro, el sábado a las 10am te parece bien.",
+            type = MessageType.TEXT,
+            status = MessageStatus.READ,
+            timestamp = "2024-01-01T08:15:00"
+        ),
+        Message(
+            id = "msg-5",
+            conversationId = "conv-1",
+            senderId = "user-2",
+            receiverId = "user-1",
+            content = "Hola, ¿sigue disponible el apartamento?",
+            type = MessageType.TEXT,
+            status = MessageStatus.DELIVERED,
+            timestamp = "2024-03-31T10:30:00"
+        )
+    )
+
     val PROVINCES = listOf(
         "San José", "Alajuela", "Cartago", "Heredia",
         "Guanacaste", "Puntarenas", "Limón"

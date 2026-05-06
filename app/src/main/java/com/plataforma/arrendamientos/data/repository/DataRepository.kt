@@ -129,10 +129,10 @@ class DataRepository @Inject constructor() {
 
     // ─── Messages ──────────────────────────────────────────────────────────────
 
-    private val _conversations = MutableStateFlow(mutableListOf<Conversation>())
+    private val _conversations = MutableStateFlow(MockData.MOCK_CONVERSATIONS)
     val conversations: StateFlow<List<Conversation>> = _conversations.asStateFlow()
 
-    private val _messages = MutableStateFlow(mutableListOf<Message>())
+    private val _messages = MutableStateFlow(MockData.MOCK_MESSAGES)
     val messages: StateFlow<List<Message>> = _messages.asStateFlow()
 
     fun getConversationsByUser(userId: String) = _conversations.value.filter { userId in it.participants }
