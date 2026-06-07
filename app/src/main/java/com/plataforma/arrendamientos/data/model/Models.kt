@@ -159,7 +159,9 @@ data class Conversation(
     val createdAt: String = "",
     val otherUserName: String = "",
     val otherUserAvatar: String? = null,
-    val propertyTitle: String? = null
+    val propertyTitle: String? = null,
+    val arrendadorId: String = "",
+    val arrendatarioId: String = ""
 )
 
 // ─── UI State Helpers ──────────────────────────────────────────────────────

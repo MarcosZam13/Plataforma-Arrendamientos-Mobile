@@ -40,6 +40,8 @@ fun MensajesInquilinoScreen(
     val conversations by messageViewModel.conversations.collectAsState()
     val myConversations = messageViewModel.getConversationsByUser(user.id)
 
+    LaunchedEffect(user.id) { messageViewModel.refreshConversations(user.id) }
+
     var selectedConversation by remember { mutableStateOf<String?>(null) }
     var messageText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
@@ -108,6 +110,9 @@ fun MensajesInquilinoScreen(
             }
         }
     } else {
+        LaunchedEffect(selectedConversation) {
+            selectedConversation?.let { messageViewModel.refreshMessages(it) }
+        }
         val messages = messageViewModel.getMessagesByConversation(selectedConversation!!)
         val conv = myConversations.find { it.id == selectedConversation }
         val receiverId = conv?.participants?.firstOrNull { it != user.id } ?: ""

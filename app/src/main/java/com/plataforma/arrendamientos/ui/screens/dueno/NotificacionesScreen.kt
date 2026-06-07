@@ -34,6 +34,8 @@ fun NotificacionesScreen(
     val user = authState.user ?: return
     val allNotifications by notificationViewModel.notifications.collectAsState()
 
+    LaunchedEffect(user.id) { notificationViewModel.refreshNotifications(user.id) }
+
     val myNotifications = allNotifications.filter { it.userId == user.id }
     val unreadCount = myNotifications.count { !it.leida }
 
@@ -124,6 +126,8 @@ fun NotificacionesInquilinoScreen(
     val authState by authViewModel.authState.collectAsState()
     val user = authState.user ?: return
     val allNotifications by notificationViewModel.notifications.collectAsState()
+
+    LaunchedEffect(user.id) { notificationViewModel.refreshNotifications(user.id) }
 
     val myNotifications = allNotifications.filter { it.userId == user.id }
     val unreadCount = myNotifications.count { !it.leida }
