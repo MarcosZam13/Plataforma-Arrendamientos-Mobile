@@ -28,10 +28,18 @@ fun MisPropiedadesScreen(
     val authState by authViewModel.authState.collectAsState()
     val user = authState.user ?: return
 
+    val allProperties by propertyViewModel.properties.collectAsState()
     val properties = propertyViewModel.getPropertiesByOwner(user.id)
     var showDeleteDialog by remember { mutableStateOf<String?>(null) }
+    val error by propertyViewModel.error.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(error) {
+        error?.let { snackbarHostState.showSnackbar(it); propertyViewModel.clearError() }
+    }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Mis propiedades") },
@@ -94,7 +102,7 @@ fun MisPropiedadesScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        propertyViewModel.deleteProperty(propId)
+                        propertyViewModel.deleteProperty(propId, onSuccess = { showDeleteDialog = null })
                         showDeleteDialog = null
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)

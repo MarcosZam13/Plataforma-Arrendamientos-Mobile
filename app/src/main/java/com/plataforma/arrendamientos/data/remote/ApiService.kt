@@ -81,7 +81,7 @@ interface ApiService {
     suspend fun getPaymentsByUser(@Path("userId") userId: String): Response<List<PaymentDto>>
 
     @POST("pagos")
-    suspend fun createPayment(@Body body: CreatePaymentRequest): Response<PaymentResponseDto>
+    suspend fun createPayment(@Body body: CreatePaymentRequest): Response<PaymentDto>
 
     @PUT("pagos/{id}")
     suspend fun updatePayment(

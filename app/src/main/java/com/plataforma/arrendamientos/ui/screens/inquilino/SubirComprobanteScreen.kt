@@ -20,12 +20,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
-import com.plataforma.arrendamientos.data.model.Currency
-import com.plataforma.arrendamientos.data.model.MockData
 import com.plataforma.arrendamientos.data.model.PaymentType
 import com.plataforma.arrendamientos.ui.theme.StatusGreen
 import com.plataforma.arrendamientos.ui.theme.StatusGreenContainer
 import com.plataforma.arrendamientos.viewmodel.AuthViewModel
+import com.plataforma.arrendamientos.viewmodel.ContractViewModel
 import com.plataforma.arrendamientos.viewmodel.PaymentViewModel
 import java.time.LocalDate
 
@@ -35,26 +34,37 @@ fun SubirComprobanteScreen(
     onSuccess: () -> Unit,
     onBack: () -> Unit,
     authViewModel: AuthViewModel = hiltViewModel(),
-    paymentViewModel: PaymentViewModel = hiltViewModel()
+    paymentViewModel: PaymentViewModel = hiltViewModel(),
+    contractViewModel: ContractViewModel = hiltViewModel()
 ) {
     val authState by authViewModel.authState.collectAsState()
     val user = authState.user ?: return
 
-    val contract = MockData.MOCK_CONTRACT
+    LaunchedEffect(user.id) { contractViewModel.refresh() }
+
+    val contract = contractViewModel.getContractByInquilino(user.id)
+
     var imageUri by remember { mutableStateOf<Uri?>(null) }
-    var isLoading by remember { mutableStateOf(false) }
     var submitted by remember { mutableStateOf(false) }
     var notas by remember { mutableStateOf("") }
+    val isLoading by paymentViewModel.isLoading.collectAsState()
+    val error by paymentViewModel.error.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     val today = LocalDate.now()
     val currentMonth = today.monthValue
     val currentYear = today.year
+
+    LaunchedEffect(error) {
+        error?.let { snackbarHostState.showSnackbar(it); paymentViewModel.clearError() }
+    }
 
     val imagePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri -> imageUri = uri }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Subir comprobante") },
@@ -68,8 +78,15 @@ fun SubirComprobanteScreen(
         ) {
             Spacer(Modifier.height(8.dp))
 
-            if (submitted) {
-                // Success state
+            if (contract == null) {
+                Box(Modifier.fillMaxWidth().padding(top = 48.dp), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        CircularProgressIndicator()
+                        Spacer(Modifier.height(12.dp))
+                        Text("Cargando información del contrato...", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            } else if (submitted) {
                 Card(
                     colors = CardDefaults.cardColors(containerColor = StatusGreenContainer),
                     shape = RoundedCornerShape(12.dp),
@@ -101,7 +118,7 @@ fun SubirComprobanteScreen(
                         Column {
                             Text("Monto a pagar", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Text(
-                                text = "$ ${contract.montoMensual}",
+                                text = "${contract.moneda.name} ${contract.montoMensual}",
                                 style = MaterialTheme.typography.headlineSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary
@@ -116,7 +133,7 @@ fun SubirComprobanteScreen(
                     }
                 }
 
-                // Upload instructions
+                // Instructions
                 Card(shape = RoundedCornerShape(12.dp)) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text("Instrucciones de pago", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
@@ -135,18 +152,9 @@ fun SubirComprobanteScreen(
                         Spacer(Modifier.height(12.dp))
 
                         if (imageUri != null) {
-                            Box(
-                                modifier = Modifier.fillMaxWidth().height(200.dp).clip(RoundedCornerShape(8.dp))
-                            ) {
-                                AsyncImage(
-                                    model = imageUri,
-                                    contentDescription = "Comprobante",
-                                    modifier = Modifier.fillMaxSize()
-                                )
-                                IconButton(
-                                    onClick = { imageUri = null },
-                                    modifier = Modifier.align(Alignment.TopEnd)
-                                ) {
+                            Box(modifier = Modifier.fillMaxWidth().height(200.dp).clip(RoundedCornerShape(8.dp))) {
+                                AsyncImage(model = imageUri, contentDescription = "Comprobante", modifier = Modifier.fillMaxSize())
+                                IconButton(onClick = { imageUri = null }, modifier = Modifier.align(Alignment.TopEnd)) {
                                     Surface(color = MaterialTheme.colorScheme.errorContainer, shape = RoundedCornerShape(20.dp)) {
                                         Icon(Icons.Default.Close, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.padding(4.dp))
                                     }
@@ -154,10 +162,7 @@ fun SubirComprobanteScreen(
                             }
                         } else {
                             Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(160.dp)
-                                    .clip(RoundedCornerShape(8.dp))
+                                modifier = Modifier.fillMaxWidth().height(160.dp).clip(RoundedCornerShape(8.dp))
                                     .border(2.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp)),
                                 contentAlignment = Alignment.Center
                             ) {
@@ -170,11 +175,7 @@ fun SubirComprobanteScreen(
                         }
 
                         Spacer(Modifier.height(8.dp))
-
-                        OutlinedButton(
-                            onClick = { imagePicker.launch("image/*") },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
+                        OutlinedButton(onClick = { imagePicker.launch("image/*") }, modifier = Modifier.fillMaxWidth()) {
                             Icon(Icons.Default.PhotoLibrary, null)
                             Spacer(Modifier.width(8.dp))
                             Text(if (imageUri == null) "Seleccionar comprobante" else "Cambiar imagen")
@@ -182,19 +183,15 @@ fun SubirComprobanteScreen(
                     }
                 }
 
-                // Notes
                 OutlinedTextField(
-                    value = notas,
-                    onValueChange = { notas = it },
+                    value = notas, onValueChange = { notas = it },
                     label = { Text("Notas adicionales (opcional)") },
                     modifier = Modifier.fillMaxWidth().height(80.dp),
                     shape = RoundedCornerShape(12.dp)
                 )
 
-                // Submit button
                 Button(
                     onClick = {
-                        isLoading = true
                         paymentViewModel.submitPayment(
                             contratoId = contract.id,
                             propiedadId = contract.propiedadId,
@@ -205,10 +202,9 @@ fun SubirComprobanteScreen(
                             mes = currentMonth,
                             anio = currentYear,
                             comprobante = imageUri?.toString(),
-                            tipo = PaymentType.MENSUALIDAD
+                            tipo = PaymentType.MENSUALIDAD,
+                            onSuccess = { submitted = true }
                         )
-                        isLoading = false
-                        submitted = true
                     },
                     modifier = Modifier.fillMaxWidth().height(52.dp),
                     enabled = !isLoading && imageUri != null,

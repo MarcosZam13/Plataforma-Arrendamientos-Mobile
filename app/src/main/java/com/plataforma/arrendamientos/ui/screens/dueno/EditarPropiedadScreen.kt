@@ -54,9 +54,16 @@ fun EditarPropiedadScreen(
     var aguaIncluida by remember { mutableStateOf(property.caracteristicas.aguaIncluida) }
     var luzIncluida by remember { mutableStateOf(property.caracteristicas.luzIncluida) }
     var internetIncluido by remember { mutableStateOf(property.caracteristicas.internetIncluido) }
-    var isLoading by remember { mutableStateOf(false) }
+    val isLoading by propertyViewModel.isLoading.collectAsState()
+    val error by propertyViewModel.error.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(error) {
+        error?.let { snackbarHostState.showSnackbar(it); propertyViewModel.clearError() }
+    }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Editar propiedad") },
@@ -119,7 +126,6 @@ fun EditarPropiedadScreen(
 
             Button(
                 onClick = {
-                    isLoading = true
                     propertyViewModel.updateProperty(
                         property.copy(
                             titulo = titulo,
@@ -141,10 +147,9 @@ fun EditarPropiedadScreen(
                                 luzIncluida = luzIncluida,
                                 internetIncluido = internetIncluido
                             )
-                        )
+                        ),
+                        onSuccess = onSuccess
                     )
-                    isLoading = false
-                    onSuccess()
                 },
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 enabled = !isLoading && titulo.isNotBlank(),

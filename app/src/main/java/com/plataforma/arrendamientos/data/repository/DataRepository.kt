@@ -1,9 +1,7 @@
 package com.plataforma.arrendamientos.data.repository
 
 import com.plataforma.arrendamientos.data.model.*
-import com.plataforma.arrendamientos.data.remote.ApiService
-import com.plataforma.arrendamientos.data.remote.MsMensajesEnviarRequest
-import com.plataforma.arrendamientos.data.remote.UpdateNotificationRequest
+import com.plataforma.arrendamientos.data.remote.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -41,6 +39,31 @@ class DataRepository @Inject constructor(
         _properties.value = props.toMutableList()
     }
 
+    suspend fun createPropertyApi(property: Property): Result<Property> = runApiCall {
+        val response = apiService.createProperty(property.toCreateRequest()).bodyOrThrow()
+        val created = response.toDomain() ?: throw Exception("Error al crear propiedad")
+        _properties.update { list -> (list + created).toMutableList() }
+        created
+    }
+
+    suspend fun updatePropertyApi(property: Property): Result<Property> = runApiCall {
+        val req = UpdatePropertyRequest(
+            titulo = property.titulo,
+            descripcion = property.descripcion,
+            precio = property.precio,
+            estado = property.estado.name.lowercase()
+        )
+        val response = apiService.updateProperty(property.id, req).bodyOrThrow()
+        val updated = response.toDomain() ?: property
+        updateProperty(updated)
+        updated
+    }
+
+    suspend fun deletePropertyApi(id: String): Result<Unit> = runApiCall {
+        apiService.deleteProperty(id)
+        deleteProperty(id)
+    }
+
     // ─── Invitations ───────────────────────────────────────────────────────────
 
     private val _invitations = MutableStateFlow(mutableListOf<Invitation>())
@@ -63,9 +86,30 @@ class DataRepository @Inject constructor(
         }
     }
 
-    suspend fun refreshInvitations(): Result<Unit> = runApiCall {
+    suspend fun refreshInvitations(userId: String? = null): Result<Unit> = runApiCall {
         val items = apiService.getInvitations().bodyOrThrow().mapNotNull { it.toDomain() }
-        _invitations.value = items.toMutableList()
+        _invitations.value = if (userId != null) items.filter { it.duenoId == userId || it.inquilinoCorreo != null }.toMutableList()
+                             else items.toMutableList()
+    }
+
+    suspend fun createInvitationApi(invitation: Invitation): Result<Invitation> = runApiCall {
+        val response = apiService.createInvitation(invitation.toCreateRequest()).bodyOrThrow()
+        val created = response.toDomain() ?: invitation
+        addInvitation(created)
+        created
+    }
+
+    suspend fun updateInvitationStatusApi(id: String, estado: String): Result<Unit> = runApiCall {
+        apiService.updateInvitation(id, UpdateInvitationRequest(estado = estado))
+        val inv = _invitations.value.find { it.id == id }
+        if (inv != null) {
+            val newStatus = when (estado.lowercase()) {
+                "aceptada"  -> InvitationStatus.ACEPTADA
+                "cancelada" -> InvitationStatus.CANCELADA
+                else        -> inv.estado
+            }
+            updateInvitation(inv.copy(estado = newStatus))
+        }
     }
 
     // ─── Contracts ─────────────────────────────────────────────────────────────
@@ -85,6 +129,16 @@ class DataRepository @Inject constructor(
     suspend fun refreshContracts(): Result<Unit> = runApiCall {
         val items = apiService.getContracts().bodyOrThrow().mapNotNull { it.toDomain() }
         _contracts.value = items.toMutableList()
+    }
+
+    fun getContractByUser(userId: String): Contract? =
+        _contracts.value.find { it.inquilinoId == userId || it.duenoId == userId }
+
+    suspend fun createContractApi(contract: Contract): Result<Contract> = runApiCall {
+        val response = apiService.createContract(contract.toCreateRequest()).bodyOrThrow()
+        val created = response.toDomain() ?: contract
+        addContract(created)
+        created
     }
 
     // ─── Payments ──────────────────────────────────────────────────────────────
@@ -125,6 +179,21 @@ class DataRepository @Inject constructor(
     suspend fun refreshPayments(userId: String): Result<Unit> = runApiCall {
         val items = apiService.getPaymentsByUser(userId).bodyOrThrow().mapNotNull { it.toDomain() }
         _payments.value = items.toMutableList()
+    }
+
+    suspend fun createPaymentApi(payment: Payment): Result<Payment> = runApiCall {
+        val response = apiService.createPayment(payment.toCreateRequest()).bodyOrThrow()
+        val created = response.toDomain() ?: payment
+        addPayment(created)
+        created
+    }
+
+    suspend fun updatePaymentStatusApi(id: String, estado: String, motivo: String? = null): Result<Unit> = runApiCall {
+        apiService.updatePayment(id, UpdatePaymentRequest(estado = estado, motivoRechazo = motivo))
+        when (estado.lowercase()) {
+            "aprobado"  -> approvePayment(id)
+            "rechazado" -> if (motivo != null) rejectPayment(id, motivo)
+        }
     }
 
     // ─── Notifications (MS Notificaciones) ─────────────────────────────────────

@@ -36,6 +36,8 @@ fun HistorialScreen(
     val myPayments = payments.filter { it.duenoId == user.id }
     val context = LocalContext.current
 
+    LaunchedEffect(user.id) { paymentViewModel.refreshPayments(user.id) }
+
     var filterStatus by remember { mutableStateOf<PaymentStatus?>(null) }
     var filterAnio by remember { mutableStateOf<Int?>(null) }
 

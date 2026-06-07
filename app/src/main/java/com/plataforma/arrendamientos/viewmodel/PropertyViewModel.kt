@@ -43,11 +43,38 @@ class PropertyViewModel @Inject constructor(
 
     fun getPropertyById(id: String) = dataRepository.getPropertyById(id)
 
-    fun addProperty(property: Property) = dataRepository.addProperty(property)
+    fun addProperty(property: Property, onSuccess: () -> Unit = {}) {
+        viewModelScope.launch {
+            _isLoading.update { true }
+            _error.update { null }
+            dataRepository.createPropertyApi(property)
+                .onSuccess { onSuccess() }
+                .onFailure { _error.update { it.message } }
+            _isLoading.update { false }
+        }
+    }
 
-    fun updateProperty(property: Property) = dataRepository.updateProperty(property)
+    fun updateProperty(property: Property, onSuccess: () -> Unit = {}) {
+        viewModelScope.launch {
+            _isLoading.update { true }
+            _error.update { null }
+            dataRepository.updatePropertyApi(property)
+                .onSuccess { onSuccess() }
+                .onFailure { _error.update { it.message } }
+            _isLoading.update { false }
+        }
+    }
 
-    fun deleteProperty(id: String) = dataRepository.deleteProperty(id)
+    fun deleteProperty(id: String, onSuccess: () -> Unit = {}) {
+        viewModelScope.launch {
+            _isLoading.update { true }
+            _error.update { null }
+            dataRepository.deletePropertyApi(id)
+                .onSuccess { onSuccess() }
+                .onFailure { _error.update { it.message } }
+            _isLoading.update { false }
+        }
+    }
 
     fun searchProperties(query: String, provincia: String?, tipo: PropertyType?, maxPrecio: Double?): List<Property> {
         return dataRepository.properties.value.filter { prop ->

@@ -160,13 +160,12 @@ fun AceptarInvitacionScreen(
                         Button(
                             onClick = {
                                 isLoading = true
-                                val contract = invitationViewModel.acceptInvitation(token, currentUser.id)
-                                if (contract != null) {
-                                    accepted = true
-                                } else {
-                                    error = "No se pudo aceptar la invitación."
-                                }
-                                isLoading = false
+                                invitationViewModel.acceptInvitation(
+                                    token = token,
+                                    inquilinoId = currentUser.id,
+                                    onSuccess = { accepted = true; isLoading = false }
+                                )
+                                // error flow handled via invitationViewModel.error
                             },
                             modifier = Modifier.fillMaxWidth().height(52.dp),
                             enabled = !isLoading,

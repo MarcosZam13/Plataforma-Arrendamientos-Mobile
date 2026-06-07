@@ -33,14 +33,23 @@ fun PagosRecibidosScreen(
     val payments by paymentViewModel.payments.collectAsState()
     val myPayments = payments.filter { it.duenoId == user.id }
 
+    LaunchedEffect(user.id) { paymentViewModel.refreshPayments(user.id) }
+
     var filterStatus by remember { mutableStateOf<PaymentStatus?>(null) }
     var showRejectDialog by remember { mutableStateOf<Payment?>(null) }
     var rejectMotivo by remember { mutableStateOf("") }
+    val error by paymentViewModel.error.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(error) {
+        error?.let { snackbarHostState.showSnackbar(it); paymentViewModel.clearError() }
+    }
 
     val filteredPayments = if (filterStatus == null) myPayments
         else myPayments.filter { it.estado == filterStatus }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Pagos recibidos") },
@@ -126,7 +135,7 @@ fun PagosRecibidosScreen(
                                             Text("Rechazar")
                                         }
                                         Button(
-                                            onClick = { paymentViewModel.approvePayment(payment.id, payment.inquilinoId) },
+                                            onClick = { paymentViewModel.approvePayment(payment.id, payment.inquilinoId) {} },
                                             modifier = Modifier.weight(1f),
                                             colors = ButtonDefaults.buttonColors(containerColor = StatusGreen)
                                         ) {
@@ -165,7 +174,10 @@ fun PagosRecibidosScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        paymentViewModel.rejectPayment(payment.id, rejectMotivo, payment.inquilinoId)
+                        paymentViewModel.rejectPayment(payment.id, rejectMotivo, payment.inquilinoId) {
+                            showRejectDialog = null
+                            rejectMotivo = ""
+                        }
                         showRejectDialog = null
                         rejectMotivo = ""
                     },

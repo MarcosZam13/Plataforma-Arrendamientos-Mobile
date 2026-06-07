@@ -44,11 +44,18 @@ fun NuevaInvitacionScreen(
     var montoDeposito by remember { mutableStateOf("") }
     var selectedMoneda by remember { mutableStateOf(Currency.USD) }
     var notas by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(false) }
+    val isLoading by invitationViewModel.isLoading.collectAsState()
+    val error by invitationViewModel.error.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
     var createdToken by remember { mutableStateOf<String?>(null) }
     var copiedToClipboard by remember { mutableStateOf(false) }
 
+    LaunchedEffect(error) {
+        error?.let { snackbarHostState.showSnackbar(it); invitationViewModel.clearError() }
+    }
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Nueva invitación") },
@@ -166,18 +173,16 @@ fun NuevaInvitacionScreen(
 
                 Button(
                     onClick = {
-                        isLoading = true
-                        val inv = invitationViewModel.createInvitation(
+                        invitationViewModel.createInvitation(
                             propiedadId = selectedPropertyId,
                             duenoId = user.id,
                             inquilinoCorreo = inquilinoCorreo,
                             montoAlquiler = montoAlquiler.toDoubleOrNull() ?: 0.0,
                             montoDeposito = montoDeposito.toDoubleOrNull() ?: 0.0,
                             moneda = selectedMoneda,
-                            notas = notas
+                            notas = notas,
+                            onSuccess = { token -> createdToken = token }
                         )
-                        createdToken = inv.token
-                        isLoading = false
                     },
                     modifier = Modifier.fillMaxWidth().height(52.dp),
                     enabled = !isLoading && selectedPropertyId.isNotBlank() && inquilinoCorreo.isNotBlank() && montoAlquiler.isNotBlank(),
