@@ -32,6 +32,9 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             authRepository.currentUser.collect { user ->
                 _authState.update { it.copy(user = user) }
+                if (user != null) {
+                    notificationPoller.start(user.id)
+                }
             }
         }
     }
