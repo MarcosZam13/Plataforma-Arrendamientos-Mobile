@@ -71,6 +71,7 @@ fun InquilinoDashboardScreen(
         bottomBar = {
             NavigationBar {
                 NavigationBarItem(selected = true, onClick = {}, icon = { Icon(Icons.Default.Dashboard, null) }, label = { Text("Inicio") })
+                NavigationBarItem(selected = false, onClick = { onNavigate(Screen.Propiedades.route) }, icon = { Icon(Icons.Default.Search, null) }, label = { Text("Explorar") })
                 NavigationBarItem(selected = false, onClick = { onNavigate(Screen.MiContrato.route) }, icon = { Icon(Icons.Default.Description, null) }, label = { Text("Contrato") })
                 NavigationBarItem(selected = false, onClick = { onNavigate(Screen.SubirComprobante.route) }, icon = { Icon(Icons.Default.Payment, null) }, label = { Text("Pagar") })
                 NavigationBarItem(selected = false, onClick = { onNavigate(Screen.MensajesInquilino.route) }, icon = { Icon(Icons.Default.Message, null) }, label = { Text("Mensajes") })
@@ -136,9 +137,9 @@ fun InquilinoDashboardScreen(
                 SectionHeader(title = "Acciones rápidas")
                 Spacer(Modifier.height(8.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    QuickActionItem(Icons.Default.Search, "Explorar\npropiedades", { onNavigate(Screen.Propiedades.route) }, Modifier.weight(1f))
                     QuickActionItem(Icons.Default.Payment, "Subir\ncomprobante", { onNavigate(Screen.SubirComprobante.route) }, Modifier.weight(1f))
                     QuickActionItem(Icons.Default.Description, "Mi\ncontrato", { onNavigate(Screen.MiContrato.route) }, Modifier.weight(1f))
-                    QuickActionItem(Icons.Default.Message, "Mensajes", { onNavigate(Screen.MensajesInquilino.route) }, Modifier.weight(1f))
                     QuickActionItem(Icons.Default.History, "Historial", { onNavigate(Screen.HistorialInquilino.route) }, Modifier.weight(1f))
                 }
             }

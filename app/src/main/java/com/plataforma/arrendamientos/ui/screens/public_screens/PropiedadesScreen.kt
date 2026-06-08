@@ -29,6 +29,9 @@ fun PropiedadesScreen(
     var selectedProvincia by remember { mutableStateOf<String?>(null) }
     var selectedTipo by remember { mutableStateOf<PropertyType?>(null) }
     var showFilters by remember { mutableStateOf(false) }
+    val isLoading by propertyViewModel.isLoading.collectAsState()
+
+    LaunchedEffect(Unit) { propertyViewModel.refresh() }
 
     val filteredProperties = propertyViewModel.searchProperties(
         query = searchQuery,
@@ -192,7 +195,11 @@ fun PropiedadesScreen(
             }
 
             // Property list
-            if (filteredProperties.isEmpty()) {
+            if (isLoading && filteredProperties.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else if (filteredProperties.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     EmptyState(
                         icon = Icons.Default.SearchOff,
