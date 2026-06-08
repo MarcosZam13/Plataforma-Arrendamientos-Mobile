@@ -1,5 +1,6 @@
 package com.plataforma.arrendamientos.ui.screens.dueno
 
+import android.content.Intent
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -10,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -127,15 +129,37 @@ fun InvitacionesScreen(
                             }
 
                             if (invitation.estado == InvitationStatus.PENDIENTE) {
+                                val context = LocalContext.current
                                 Spacer(Modifier.height(12.dp))
-                                OutlinedButton(
-                                    onClick = { invitationViewModel.cancelInvitation(invitation.id) {} },
+                                Row(
                                     modifier = Modifier.fillMaxWidth(),
-                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = StatusRed)
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    Icon(Icons.Default.Cancel, null, modifier = Modifier.size(16.dp))
-                                    Spacer(Modifier.width(6.dp))
-                                    Text("Cancelar invitación")
+                                    Button(
+                                        onClick = {
+                                            val link = "arrendamientos://invitacion/${invitation.token}"
+                                            val intent = Intent(Intent.ACTION_SEND).apply {
+                                                type = "text/plain"
+                                                putExtra(Intent.EXTRA_SUBJECT, "Invitación de arrendamiento")
+                                                putExtra(Intent.EXTRA_TEXT, "Te invito a arrendar una propiedad en Plataforma Arrendamientos CR. Abrí el siguiente enlace:\n\n$link")
+                                            }
+                                            context.startActivity(Intent.createChooser(intent, "Compartir invitación"))
+                                        },
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Icon(Icons.Default.Share, null, modifier = Modifier.size(16.dp))
+                                        Spacer(Modifier.width(4.dp))
+                                        Text("Compartir")
+                                    }
+                                    OutlinedButton(
+                                        onClick = { invitationViewModel.cancelInvitation(invitation.id) {} },
+                                        modifier = Modifier.weight(1f),
+                                        colors = ButtonDefaults.outlinedButtonColors(contentColor = StatusRed)
+                                    ) {
+                                        Icon(Icons.Default.Cancel, null, modifier = Modifier.size(16.dp))
+                                        Spacer(Modifier.width(4.dp))
+                                        Text("Cancelar")
+                                    }
                                 }
                             }
                         }

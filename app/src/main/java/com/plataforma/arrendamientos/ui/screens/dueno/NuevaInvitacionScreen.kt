@@ -11,7 +11,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import android.content.Intent
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -36,6 +38,7 @@ fun NuevaInvitacionScreen(
     val authState by authViewModel.authState.collectAsState()
     val user = authState.user ?: return
     val clipboard = LocalClipboardManager.current
+    val context = LocalContext.current
 
     val myProperties = propertyViewModel.getPropertiesByOwner(user.id)
     var selectedPropertyId by remember { mutableStateOf(myProperties.firstOrNull()?.id ?: "") }
@@ -94,7 +97,24 @@ fun NuevaInvitacionScreen(
                             shape = RoundedCornerShape(8.dp)
                         )
                         Spacer(Modifier.height(12.dp))
-                        Button(onClick = onSuccess, modifier = Modifier.fillMaxWidth()) {
+                        Button(
+                            onClick = {
+                                val link = "arrendamientos://invitacion/$createdToken"
+                                val intent = Intent(Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_SUBJECT, "Invitación de arrendamiento")
+                                    putExtra(Intent.EXTRA_TEXT, "Te invito a arrendar una propiedad en Plataforma Arrendamientos CR. Abrí el siguiente enlace para aceptar:\n\n$link")
+                                }
+                                context.startActivity(Intent.createChooser(intent, "Compartir invitación"))
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Default.Share, null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Compartir por WhatsApp / Email")
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        OutlinedButton(onClick = onSuccess, modifier = Modifier.fillMaxWidth()) {
                             Text("Ver invitaciones")
                         }
                     }

@@ -9,6 +9,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.navigation.navDeepLink
 import com.plataforma.arrendamientos.data.model.UserRole
 import com.plataforma.arrendamientos.ui.screens.dueno.*
 import com.plataforma.arrendamientos.ui.screens.inquilino.*
@@ -93,7 +94,8 @@ fun AppNavigation() {
 
         composable(
             route = Screen.AceptarInvitacion.route,
-            arguments = listOf(navArgument("token") { type = NavType.StringType })
+            arguments = listOf(navArgument("token") { type = NavType.StringType }),
+            deepLinks = listOf(navDeepLink { uriPattern = "arrendamientos://invitacion/{token}" })
         ) { backStackEntry ->
             val token = backStackEntry.arguments?.getString("token") ?: ""
             AceptarInvitacionScreen(
