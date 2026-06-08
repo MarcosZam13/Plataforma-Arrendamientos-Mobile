@@ -39,7 +39,8 @@ fun DuenoDashboardScreen(
     val isDarkTheme = LocalIsDarkTheme.current
     val toggleTheme = LocalToggleTheme.current
 
-    val myProperties = propertyViewModel.getPropertiesByOwner(user.id)
+    val allProperties by propertyViewModel.properties.collectAsState()
+    val myProperties = allProperties.filter { it.duenoId == user.id }
     val pendingPayments = paymentViewModel.getPendingPayments(user.id)
     val allPayments = paymentViewModel.getPaymentsByOwner(user.id)
 

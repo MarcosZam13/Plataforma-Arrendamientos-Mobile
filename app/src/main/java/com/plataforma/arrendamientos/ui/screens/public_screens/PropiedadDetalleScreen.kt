@@ -19,8 +19,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.plataforma.arrendamientos.data.model.Currency
 import com.plataforma.arrendamientos.data.model.User
+import com.plataforma.arrendamientos.data.model.UserRole
 import com.plataforma.arrendamientos.ui.components.PropertyStatusBadge
 import com.plataforma.arrendamientos.ui.components.formatPrice
+import com.plataforma.arrendamientos.viewmodel.MessageViewModel
 import com.plataforma.arrendamientos.viewmodel.PropertyViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -31,9 +33,19 @@ fun PropiedadDetalleScreen(
     onBack: () -> Unit,
     onLogin: () -> Unit,
     onContactar: (() -> Unit)? = null,
-    propertyViewModel: PropertyViewModel = hiltViewModel()
+    propertyViewModel: PropertyViewModel = hiltViewModel(),
+    messageViewModel: MessageViewModel = hiltViewModel()
 ) {
     val property = propertyViewModel.getPropertyById(propiedadId)
+    var showContactarDialog by remember { mutableStateOf(false) }
+    var firstMessageText by remember { mutableStateOf("") }
+    val isLoading by messageViewModel.isLoading.collectAsState()
+    val error by messageViewModel.error.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(error) {
+        error?.let { snackbarHostState.showSnackbar(it); messageViewModel.clearError() }
+    }
 
     if (property == null) {
         Scaffold(
@@ -59,6 +71,7 @@ fun PropiedadDetalleScreen(
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text(property.titulo, maxLines = 1) },
@@ -94,6 +107,7 @@ fun PropiedadDetalleScreen(
                     Button(
                         onClick = when {
                             currentUser == null -> onLogin
+                            currentUser.rol == UserRole.INQUILINO -> ({ showContactarDialog = true })
                             onContactar != null -> onContactar
                             else -> ({})
                         },
@@ -244,6 +258,66 @@ fun PropiedadDetalleScreen(
                 Spacer(Modifier.height(80.dp))
             }
         }
+    }
+
+    if (showContactarDialog && currentUser != null && property != null) {
+        AlertDialog(
+            onDismissRequest = { if (!isLoading) showContactarDialog = false },
+            icon = { Icon(Icons.Default.Message, contentDescription = null) },
+            title = { Text("Contactar propietario") },
+            text = {
+                Column {
+                    Text(
+                        "Envía un mensaje al dueño de \"${property.titulo}\"",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = firstMessageText,
+                        onValueChange = { firstMessageText = it },
+                        placeholder = { Text("Escribe tu mensaje...") },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 3,
+                        maxLines = 5,
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        messageViewModel.sendFirstMessage(
+                            propiedadId = property.id,
+                            arrendadorId = property.duenoId,
+                            arrendatarioId = currentUser.id,
+                            contenido = firstMessageText.trim(),
+                            onSuccess = {
+                                showContactarDialog = false
+                                firstMessageText = ""
+                                onContactar?.invoke()
+                            }
+                        )
+                    },
+                    enabled = firstMessageText.isNotBlank() && !isLoading
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    } else {
+                        Text("Enviar")
+                    }
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { showContactarDialog = false },
+                    enabled = !isLoading
+                ) { Text("Cancelar") }
+            }
+        )
     }
 }
 

@@ -24,6 +24,9 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -74,7 +77,11 @@ class AuthRepository @Inject constructor(
         }
     }
 
-    private val client = OkHttpClient()
+    private val client = OkHttpClient.Builder()
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
+        .writeTimeout(30, TimeUnit.SECONDS)
+        .build()
     private val json   = Json { ignoreUnknownKeys = true; isLenient = true }
     private val JSON_MEDIA = "application/json; charset=utf-8".toMediaType()
 
@@ -120,6 +127,10 @@ class AuthRepository @Inject constructor(
                     }
                     Result.failure(Exception(msg))
                 }
+            } catch (e: SocketTimeoutException) {
+                Result.failure(Exception("⏳ El servidor tardó demasiado. Intentá de nuevo en un momento."))
+            } catch (e: UnknownHostException) {
+                Result.failure(Exception("📡 Sin conexión a internet. Verificá tu red."))
             } catch (e: Exception) {
                 Result.failure(Exception("No se pudo conectar al servidor. Verificá tu conexión."))
             }
@@ -159,6 +170,10 @@ class AuthRepository @Inject constructor(
                     }
                     Result.failure(Exception(msg))
                 }
+            } catch (e: SocketTimeoutException) {
+                Result.failure(Exception("⏳ El servidor tardó demasiado. Intentá de nuevo en un momento."))
+            } catch (e: UnknownHostException) {
+                Result.failure(Exception("📡 Sin conexión a internet. Verificá tu red."))
             } catch (e: Exception) {
                 Result.failure(Exception("No se pudo conectar al servidor. Verificá tu conexión."))
             }

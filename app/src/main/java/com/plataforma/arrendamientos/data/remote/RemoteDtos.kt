@@ -7,8 +7,17 @@ import kotlinx.serialization.Serializable
 // ─── Response DTOs ────────────────────────────────────────────────────────────
 
 @Serializable
+data class PropiedadListResponse(
+    val data: List<PropertyDto> = emptyList(),
+    val total: Int = 0,
+    val page: Int = 1,
+    val pageSize: Int = 6,
+    val totalPages: Int = 0
+)
+
+@Serializable
 data class PropertyDto(
-    val id: String = "",
+    @SerialName("idPropiedad") val id: String = "",
     val titulo: String = "",
     val descripcion: String = "",
     val precio: Double = 0.0,
@@ -478,38 +487,28 @@ data class LoginResponse(
 // ─── MS Mensajes — shapes reales de la API ───────────────────────────────────
 
 @Serializable
-data class MsMensajesConversacionItem(
-    @SerialName("_id") val id: String = "",
+data class MsMensajesConversacionEntry(
+    val conversacion_id: String = "",
     val propiedad_id: String = "",
     val arrendador_id: String = "",
     val arrendatario_id: String = "",
-    val creado_en: String = ""
-)
-
-@Serializable
-data class MsMensajesConversacionEntry(
-    val conversacion: MsMensajesConversacionItem = MsMensajesConversacionItem(),
     val ultimo_mensaje: String? = null,
     val ultimo_enviado_en: String? = null,
-    val no_leidos: Int = 0
+    val no_leidos: Int = 0,
+    val creado_en: String = ""
 ) {
     fun toDomain(currentUserId: String): Conversation? {
-        val c = conversacion
-        if (c.id.isBlank()) return null
-        val unread = if (currentUserId == c.arrendador_id)
-            mapOf(c.arrendador_id to no_leidos)
-        else
-            mapOf(c.arrendatario_id to no_leidos)
+        if (conversacion_id.isBlank()) return null
         return Conversation(
-            id = c.id,
-            participants = listOf(c.arrendador_id, c.arrendatario_id),
-            propertyId = c.propiedad_id,
+            id = conversacion_id,
+            participants = listOf(arrendador_id, arrendatario_id),
+            propertyId = propiedad_id.ifBlank { null },
             lastMessage = ultimo_mensaje,
             lastMessageAt = ultimo_enviado_en,
-            unreadCount = unread,
-            createdAt = c.creado_en,
-            arrendadorId = c.arrendador_id,
-            arrendatarioId = c.arrendatario_id
+            unreadCount = mapOf(currentUserId to no_leidos),
+            createdAt = creado_en,
+            arrendadorId = arrendador_id,
+            arrendatarioId = arrendatario_id
         )
     }
 }

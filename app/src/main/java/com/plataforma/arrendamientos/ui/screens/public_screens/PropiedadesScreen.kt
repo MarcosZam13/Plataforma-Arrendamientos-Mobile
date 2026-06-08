@@ -30,8 +30,17 @@ fun PropiedadesScreen(
     var selectedTipo by remember { mutableStateOf<PropertyType?>(null) }
     var showFilters by remember { mutableStateOf(false) }
     val isLoading by propertyViewModel.isLoading.collectAsState()
+    val error by propertyViewModel.error.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) { propertyViewModel.refresh() }
+
+    LaunchedEffect(error) {
+        error?.let {
+            snackbarHostState.showSnackbar(it)
+            propertyViewModel.clearError()
+        }
+    }
 
     val filteredProperties = propertyViewModel.searchProperties(
         query = searchQuery,
@@ -41,6 +50,7 @@ fun PropiedadesScreen(
     )
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Propiedades disponibles") },

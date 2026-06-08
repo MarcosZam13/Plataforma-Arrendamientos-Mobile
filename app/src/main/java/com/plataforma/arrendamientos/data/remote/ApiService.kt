@@ -16,7 +16,9 @@ interface ApiService {
     // ─── Properties ───────────────────────────────────────────────────────────
 
     @GET("propiedades")
-    suspend fun getProperties(): Response<List<PropertyDto>>
+    suspend fun getProperties(
+        @Query("limit") limit: Int = 100
+    ): Response<PropiedadListResponse>
 
     @GET("propiedades/{id}")
     suspend fun getProperty(@Path("id") id: String): Response<PropertyDto>

@@ -97,5 +97,26 @@ class MessageViewModel @Inject constructor(
         }
     }
 
+    fun sendFirstMessage(
+        propiedadId: String,
+        arrendadorId: String,
+        arrendatarioId: String,
+        contenido: String,
+        onSuccess: () -> Unit
+    ) {
+        viewModelScope.launch {
+            _isLoading.update { true }
+            dataRepository.sendMessageApi(
+                destinatarioId = arrendadorId,
+                propiedadId = propiedadId,
+                contenido = contenido,
+                arrendadorId = arrendadorId,
+                arrendatarioId = arrendatarioId
+            ).onSuccess { onSuccess() }
+             .onFailure { e -> _error.update { e.message ?: "Error al enviar mensaje" } }
+            _isLoading.update { false }
+        }
+    }
+
     fun clearError() = _error.update { null }
 }

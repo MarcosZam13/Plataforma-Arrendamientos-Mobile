@@ -35,7 +35,8 @@ class DataRepository @Inject constructor(
     }
 
     suspend fun refreshProperties(): Result<Unit> = runApiCall {
-        val props = apiService.getProperties().bodyOrThrow().mapNotNull { it.toDomain() }
+        val response = apiService.getProperties(limit = 100).bodyOrThrow()
+        val props = response.data.mapNotNull { it.toDomain() }
         _properties.value = props.toMutableList()
     }
 
