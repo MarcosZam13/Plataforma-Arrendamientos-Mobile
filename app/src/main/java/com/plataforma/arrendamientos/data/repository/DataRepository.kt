@@ -3,6 +3,8 @@ package com.plataforma.arrendamientos.data.repository
 import com.plataforma.arrendamientos.data.model.*
 import com.plataforma.arrendamientos.data.remote.*
 import kotlinx.coroutines.flow.MutableStateFlow
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -325,6 +327,10 @@ class DataRepository @Inject constructor(
     private suspend fun <T> runApiCall(block: suspend () -> T): Result<T> =
         try {
             Result.success(block())
+        } catch (e: SocketTimeoutException) {
+            Result.failure(Exception("⏳ El servidor tardó demasiado. Puede estar iniciando, intentá de nuevo."))
+        } catch (e: UnknownHostException) {
+            Result.failure(Exception("📡 Sin conexión a internet. Verificá tu red."))
         } catch (e: Exception) {
             Result.failure(e)
         }
