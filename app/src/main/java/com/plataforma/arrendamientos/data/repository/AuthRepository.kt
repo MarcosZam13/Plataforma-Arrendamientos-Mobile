@@ -97,13 +97,13 @@ class AuthRepository @Inject constructor(
                     val error = runCatching {
                         json.decodeFromString<ErrorResponseDto>(responseBody)
                     }.getOrNull()
-                    val msg = when (response.code()) {
+                    val msg = when (response.code) {
                         401  -> "🔐 Correo o contraseña incorrectos"
                         404  -> "👤 Usuario no encontrado"
                         429  -> "⏳ Demasiados intentos, esperá un momento"
                         503  -> "🏖️ El servidor está de vacaciones, volvé pronto"
                         else -> error?.message?.ifBlank { error.error }
-                            ?: "💥 Error inesperado (${response.code()}). Intentá de nuevo."
+                            ?: "💥 Error inesperado (${response.code}). Intentá de nuevo."
                     }
                     Result.failure(Exception(msg))
                 }
@@ -137,12 +137,12 @@ class AuthRepository @Inject constructor(
                     val error = runCatching {
                         json.decodeFromString<ErrorResponseDto>(responseBody)
                     }.getOrNull()
-                    val msg = when (response.code()) {
+                    val msg = when (response.code) {
                         409  -> "📧 Este correo ya está registrado"
                         400  -> "📋 Datos de registro inválidos"
                         503  -> "🏖️ El servidor de usuarios está de descanso"
                         else -> error?.message?.ifBlank { error.error }
-                            ?: "💥 Error inesperado (${response.code()}). Intentá de nuevo."
+                            ?: "💥 Error inesperado (${response.code}). Intentá de nuevo."
                     }
                     Result.failure(Exception(msg))
                 }
