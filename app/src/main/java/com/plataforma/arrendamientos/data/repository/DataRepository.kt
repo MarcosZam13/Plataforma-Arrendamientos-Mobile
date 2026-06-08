@@ -234,6 +234,15 @@ class DataRepository @Inject constructor(
         markNotificationRead(notificacionId)
     }
 
+    suspend fun registrarDispositivo(userId: String, fcmToken: String): Result<Unit> = runApiCall {
+        apiService.registrarDispositivo(
+            com.plataforma.arrendamientos.data.remote.RegistrarDispositivoRequest(
+                usuario_id = userId,
+                fcm_token = fcmToken
+            )
+        )
+    }
+
     // ─── Messages + Conversations (MS Mensajes) ────────────────────────────────
 
     private val _conversations = MutableStateFlow(listOf<Conversation>())

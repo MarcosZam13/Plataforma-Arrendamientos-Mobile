@@ -685,3 +685,10 @@ fun AppNotification.toCreateRequest() = CreateNotificationRequest(
     tipo = tipo.name.lowercase(),
     link = link
 )
+
+@Serializable
+data class RegistrarDispositivoRequest(
+    val usuario_id: String,
+    val fcm_token: String,
+    val plataforma: String = "android"
+)

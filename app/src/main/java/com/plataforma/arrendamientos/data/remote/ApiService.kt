@@ -101,6 +101,9 @@ interface ApiService {
         @Path("id") id: String
     ): Response<Unit>
 
+    @POST("dispositivos/dispositivo")
+    suspend fun registrarDispositivo(@Body body: RegistrarDispositivoRequest): Response<Unit>
+
     // ─── MS Mensajes ──────────────────────────────────────────────────────────
 
     @GET("mensajes/conversaciones")

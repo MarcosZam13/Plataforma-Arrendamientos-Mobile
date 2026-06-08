@@ -2,21 +2,25 @@ package com.plataforma.arrendamientos.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.messaging.FirebaseMessaging
 import com.plataforma.arrendamientos.data.model.AuthState
 import com.plataforma.arrendamientos.data.model.User
 import com.plataforma.arrendamientos.data.model.UserRole
 import com.plataforma.arrendamientos.data.repository.AuthRepository
+import com.plataforma.arrendamientos.data.repository.DataRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val dataRepository: DataRepository
 ) : ViewModel() {
 
     private val _authState = MutableStateFlow(AuthState())
@@ -41,6 +45,7 @@ class AuthViewModel @Inject constructor(
             result.fold(
                 onSuccess = { user ->
                     _authState.update { it.copy(user = user, isLoading = false) }
+                    registrarTokenFcm(user.id)
                     onSuccess()
                 },
                 onFailure = { e ->
@@ -57,12 +62,24 @@ class AuthViewModel @Inject constructor(
             result.fold(
                 onSuccess = { user ->
                     _authState.update { it.copy(user = user, isLoading = false) }
+                    registrarTokenFcm(user.id)
                     onSuccess()
                 },
                 onFailure = { e ->
                     _authState.update { it.copy(isLoading = false, error = e.message) }
                 }
             )
+        }
+    }
+
+    private fun registrarTokenFcm(userId: String) {
+        viewModelScope.launch {
+            try {
+                val token = FirebaseMessaging.getInstance().token.await()
+                dataRepository.registrarDispositivo(userId = userId, fcmToken = token)
+            } catch (_: Exception) {
+                // No bloqueamos el login si FCM falla
+            }
         }
     }
 

@@ -28,6 +28,11 @@ jobs:
       - name: Dar permisos al gradlew
         run: chmod +x ./gradlew
 
+      - name: Crear google-services.json
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: echo "$GOOGLE_SERVICES_JSON" > app/google-services.json
+
       - name: Compilar APK debug
         env:
           APIM_SUBSCRIPTION_KEY: ${{ secrets.APIM_SUBSCRIPTION_KEY }}
