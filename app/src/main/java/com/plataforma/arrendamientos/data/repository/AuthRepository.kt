@@ -9,11 +9,14 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.plataforma.arrendamientos.BuildConfig
 import com.plataforma.arrendamientos.data.model.User
 import com.plataforma.arrendamientos.data.model.UserRole
+import com.plataforma.arrendamientos.di.TokenHolder
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -53,13 +56,23 @@ private data class ErrorResponseDto(
 
 @Singleton
 class AuthRepository @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val tokenHolder: TokenHolder
 ) {
     private val USER_ID_KEY    = stringPreferencesKey("user_id")
     private val USER_NAME_KEY  = stringPreferencesKey("user_name")
     private val USER_EMAIL_KEY = stringPreferencesKey("user_email")
     private val USER_ROLE_KEY  = stringPreferencesKey("user_role")
     private val AUTH_TOKEN_KEY = stringPreferencesKey("auth_token")
+
+    init {
+        // Restore token from DataStore so Retrofit calls work after app restart
+        kotlinx.coroutines.GlobalScope.launch(Dispatchers.IO) {
+            context.dataStore.data.firstOrNull()?.get(AUTH_TOKEN_KEY)?.let {
+                tokenHolder.token = it
+            }
+        }
+    }
 
     private val client = OkHttpClient()
     private val json   = Json { ignoreUnknownKeys = true; isLenient = true }
@@ -166,6 +179,7 @@ class AuthRepository @Inject constructor(
 
     // ─── Logout ───────────────────────────────────────────────────────────────
     suspend fun logout() {
+        tokenHolder.token = null
         context.dataStore.edit { prefs ->
             prefs.remove(USER_ID_KEY)
             prefs.remove(USER_NAME_KEY)
@@ -197,6 +211,7 @@ class AuthRepository @Inject constructor(
     }
 
     private suspend fun saveUser(user: User, token: String) {
+        tokenHolder.token = token
         context.dataStore.edit { prefs ->
             prefs[USER_ID_KEY]    = user.id
             prefs[USER_NAME_KEY]  = user.nombre
