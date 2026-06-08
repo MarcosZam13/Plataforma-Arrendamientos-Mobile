@@ -459,10 +459,10 @@ data class LoginResponse(
     val rol: String = "",
     val role: String = ""
 ) {
-    fun getToken() = token.ifBlank { accessToken }
-    fun getUserId() = id.ifBlank { userId }
-    fun getEmail() = correo.ifBlank { email }
-    fun getRole() = rol.ifBlank { role }.lowercase()
+    fun resolveToken() = token.ifBlank { accessToken }
+    fun resolveUserId() = id.ifBlank { userId }
+    fun resolveEmail() = correo.ifBlank { email }
+    fun resolveRole() = rol.ifBlank { role }.lowercase()
 }
 
 // ─── MS Mensajes — shapes reales de la API ───────────────────────────────────

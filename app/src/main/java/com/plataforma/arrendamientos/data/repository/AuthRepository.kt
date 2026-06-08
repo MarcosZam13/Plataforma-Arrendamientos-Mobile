@@ -55,15 +55,15 @@ class AuthRepository @Inject constructor(
             if (response.isSuccessful) {
                 val body = response.body()
                     ?: return Result.failure(Exception("Respuesta vacía del servidor"))
-                val token = body.getToken()
+                val token = body.resolveToken()
                 if (token.isBlank())
                     return Result.failure(Exception("El servidor no devolvió un token"))
                 tokenHolder.token = token
                 val user = User(
-                    id     = body.getUserId(),
+                    id     = body.resolveUserId(),
                     nombre = body.nombre.ifBlank { correo },
-                    correo = body.getEmail().ifBlank { correo },
-                    rol    = roleFromString(body.getRole())
+                    correo = body.resolveEmail().ifBlank { correo },
+                    rol    = roleFromString(body.resolveRole())
                 )
                 saveUser(user, token)
                 Result.success(user)
@@ -89,12 +89,12 @@ class AuthRepository @Inject constructor(
             if (response.isSuccessful) {
                 val body = response.body()
                     ?: return Result.failure(Exception("Respuesta vacía del servidor"))
-                val token = body.getToken()
+                val token = body.resolveToken()
                 tokenHolder.token = token.ifBlank { null }.let { token }
                 val user = User(
-                    id     = body.getUserId().ifBlank { "user-${System.currentTimeMillis()}" },
+                    id     = body.resolveUserId().ifBlank { "user-${System.currentTimeMillis()}" },
                     nombre = body.nombre.ifBlank { nombre },
-                    correo = body.getEmail().ifBlank { correo },
+                    correo = body.resolveEmail().ifBlank { correo },
                     rol    = rol
                 )
                 saveUser(user, token.ifBlank { "pending-${user.id}" })
