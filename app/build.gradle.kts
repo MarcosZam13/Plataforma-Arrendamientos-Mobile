@@ -36,7 +36,7 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("String", "API_BASE_URL", "\"https://plataforma-arrendamientos-api.azure-api.net/api/\"")
+        buildConfigField("String", "API_BASE_URL", "\"https://plataforma-arrendamientos-api.azure-api.net/\"")
         buildConfigField("String", "APIM_SUBSCRIPTION_KEY", "\"$apimKey\"")
     }
 

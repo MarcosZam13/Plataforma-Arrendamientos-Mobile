@@ -227,7 +227,7 @@ class DataRepository @Inject constructor(
     }
 
     suspend fun markNotificationReadApi(notificacionId: String): Result<Unit> = runApiCall {
-        apiService.marcarNotificacionLeida(notificacionId, UpdateNotificationRequest(leida = true))
+        apiService.marcarNotificacionLeida(notificacionId)
         markNotificationRead(notificacionId)
     }
 
@@ -272,7 +272,7 @@ class DataRepository @Inject constructor(
     }
 
     suspend fun refreshConversations(userId: String): Result<Unit> = runApiCall {
-        val response = apiService.getConversacionesByUser(userId).bodyOrThrow()
+        val response = apiService.getConversacionesByUser().bodyOrThrow()
         val convs = response.conversaciones.mapNotNull { it.toDomain(userId) }
         _conversations.value = convs
     }

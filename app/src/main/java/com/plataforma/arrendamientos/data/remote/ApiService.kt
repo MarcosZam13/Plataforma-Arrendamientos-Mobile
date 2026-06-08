@@ -94,18 +94,17 @@ interface ApiService {
     @GET("notificaciones/{userId}")
     suspend fun getNotificacionesByUser(@Path("userId") userId: String): Response<MsNotificacionesResponse>
 
-    @PUT("notificaciones/{id}")
+    @PATCH("notificaciones/{id}/leer")
     suspend fun marcarNotificacionLeida(
-        @Path("id") id: String,
-        @Body body: UpdateNotificationRequest
+        @Path("id") id: String
     ): Response<Unit>
 
     // ─── MS Mensajes ──────────────────────────────────────────────────────────
 
-    @GET("conversaciones/{userId}")
-    suspend fun getConversacionesByUser(@Path("userId") userId: String): Response<MsMensajesConversacionesResponse>
+    @GET("mensajes/conversaciones")
+    suspend fun getConversacionesByUser(): Response<MsMensajesConversacionesResponse>
 
-    @GET("mensajes/{conversationId}")
+    @GET("mensajes/conversaciones/{conversationId}/mensajes")
     suspend fun getHistorialMensajes(@Path("conversationId") conversationId: String): Response<MsMensajesHistorialResponse>
 
     @POST("mensajes")
