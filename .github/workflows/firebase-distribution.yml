@@ -25,10 +25,13 @@ jobs:
           cache: gradle
 
       # 3. Dar permisos y compilar APK debug
+      - name: Dar permisos al gradlew
+        run: chmod +x ./gradlew
+
       - name: Compilar APK debug
         env:
           APIM_SUBSCRIPTION_KEY: ${{ secrets.APIM_SUBSCRIPTION_KEY }}
-        run: gradle assembleDebug
+        run: ./gradlew assembleDebug
 
       # 4. Subir APK como artefacto de GitHub Actions
       - name: Subir APK como artefacto
@@ -41,6 +44,9 @@ jobs:
       # 5. Distribuir via Firebase App Distribution
       - name: Distribuir via Firebase App Distribution
         uses: wzieba/Firebase-Distribution-Github-Action@v1
+        env:
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
+          ACTOR: ${{ github.actor }}
         with:
           appId: ${{ secrets.FIREBASE_APP_ID }}
           serviceCredentialsFileContent: ${{ secrets.FIREBASE_CREDENTIALS }}
@@ -49,5 +55,5 @@ jobs:
           releaseNotes: |
             Nueva version: ${{ github.ref_name }} (#${{ github.run_number }})
             Commit: ${{ github.sha }}
-            Por: ${{ github.actor }}
-            Mensaje: ${{ github.event.head_commit.message }}
+            Por: ${{ env.ACTOR }}
+            Mensaje: ${{ env.COMMIT_MSG }}
