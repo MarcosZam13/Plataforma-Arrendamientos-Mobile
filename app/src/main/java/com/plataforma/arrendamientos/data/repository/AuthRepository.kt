@@ -9,9 +9,11 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.plataforma.arrendamientos.data.model.User
 import com.plataforma.arrendamientos.data.model.UserRole
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
@@ -75,58 +77,62 @@ class AuthRepository @Inject constructor(
 
     // ─── Login ────────────────────────────────────────────────────────────────
     suspend fun login(correo: String, contrasena: String): Result<User> {
-        return try {
-            val body = """{"correo":"${correo.trim().lowercase()}","contrasena":"$contrasena"}"""
-            val request = Request.Builder()
-                .url("$BASE_URL/api/auth/login")
-                .post(body.toRequestBody(JSON_MEDIA))
-                .build()
+        return withContext(Dispatchers.IO) {
+            try {
+                val body = """{"correo":"${correo.trim().lowercase()}","contrasena":"$contrasena"}"""
+                val request = Request.Builder()
+                    .url("$BASE_URL/api/auth/login")
+                    .post(body.toRequestBody(JSON_MEDIA))
+                    .build()
 
-            val response = client.newCall(request).execute()
-            val responseBody = response.body?.string() ?: ""
+                val response = client.newCall(request).execute()
+                val responseBody = response.body?.string() ?: ""
 
-            if (response.isSuccessful) {
-                val dto = json.decodeFromString<LoginResponseDto>(responseBody)
-                val user = dto.toUser()
-                saveUser(user, dto.token)
-                Result.success(user)
-            } else {
-                val error = runCatching {
-                    json.decodeFromString<ErrorResponseDto>(responseBody)
-                }.getOrNull()
-                Result.failure(Exception(error?.message?.ifBlank { error.error } ?: "Correo o contraseña incorrectos"))
+                if (response.isSuccessful) {
+                    val dto = json.decodeFromString<LoginResponseDto>(responseBody)
+                    val user = dto.toUser()
+                    saveUser(user, dto.token)
+                    Result.success(user)
+                } else {
+                    val error = runCatching {
+                        json.decodeFromString<ErrorResponseDto>(responseBody)
+                    }.getOrNull()
+                    Result.failure(Exception(error?.message?.ifBlank { error.error } ?: "Correo o contraseña incorrectos"))
+                }
+            } catch (e: Exception) {
+                Result.failure(Exception("No se pudo conectar al servidor. Verificá tu conexión."))
             }
-        } catch (e: Exception) {
-            Result.failure(Exception("No se pudo conectar al servidor. Verificá tu conexión."))
         }
     }
 
     // ─── Registro ─────────────────────────────────────────────────────────────
     suspend fun register(nombre: String, correo: String, contrasena: String, rol: UserRole): Result<User> {
-        return try {
-            val rolStr = rol.name.lowercase()
-            val body = """{"nombre":"${nombre.trim()}","correo":"${correo.trim().lowercase()}","contrasena":"$contrasena","rol":"$rolStr"}"""
-            val request = Request.Builder()
-                .url("$BASE_URL/api/auth/registro")
-                .post(body.toRequestBody(JSON_MEDIA))
-                .build()
+        return withContext(Dispatchers.IO) {
+            try {
+                val rolStr = rol.name.lowercase()
+                val body = """{"nombre":"${nombre.trim()}","correo":"${correo.trim().lowercase()}","contrasena":"$contrasena","rol":"$rolStr"}"""
+                val request = Request.Builder()
+                    .url("$BASE_URL/api/auth/registro")
+                    .post(body.toRequestBody(JSON_MEDIA))
+                    .build()
 
-            val response = client.newCall(request).execute()
-            val responseBody = response.body?.string() ?: ""
+                val response = client.newCall(request).execute()
+                val responseBody = response.body?.string() ?: ""
 
-            if (response.isSuccessful) {
-                val dto = json.decodeFromString<LoginResponseDto>(responseBody)
-                val user = dto.toUser()
-                saveUser(user, dto.token)
-                Result.success(user)
-            } else {
-                val error = runCatching {
-                    json.decodeFromString<ErrorResponseDto>(responseBody)
-                }.getOrNull()
-                Result.failure(Exception(error?.message?.ifBlank { error.error } ?: "No se pudo crear la cuenta. Intentá de nuevo."))
+                if (response.isSuccessful) {
+                    val dto = json.decodeFromString<LoginResponseDto>(responseBody)
+                    val user = dto.toUser()
+                    saveUser(user, dto.token)
+                    Result.success(user)
+                } else {
+                    val error = runCatching {
+                        json.decodeFromString<ErrorResponseDto>(responseBody)
+                    }.getOrNull()
+                    Result.failure(Exception(error?.message?.ifBlank { error.error } ?: "No se pudo crear la cuenta. Intentá de nuevo."))
+                }
+            } catch (e: Exception) {
+                Result.failure(Exception("No se pudo conectar al servidor. Verificá tu conexión."))
             }
-        } catch (e: Exception) {
-            Result.failure(Exception("No se pudo conectar al servidor. Verificá tu conexión."))
         }
     }
 
@@ -162,9 +168,9 @@ class AuthRepository @Inject constructor(
     // ─── Helpers ──────────────────────────────────────────────────────────────
     private fun LoginResponseDto.toUser(): User {
         val rol = when (usuario.rol.trim().lowercase()) {
-            "dueno"    -> UserRole.DUENO
+            "dueno"     -> UserRole.DUENO
             "inquilino" -> UserRole.INQUILINO
-            else       -> UserRole.INQUILINO
+            else        -> UserRole.INQUILINO
         }
         return User(
             id     = usuario.id,
