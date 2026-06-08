@@ -32,7 +32,11 @@ fun MensajesScreen(
     val user = authState.user ?: return
     val conversations by messageViewModel.conversations.collectAsState()
     val myConversations = messageViewModel.getConversationsByUser(user.id)
+    val isLoading by messageViewModel.isLoading.collectAsState()
+    val error by messageViewModel.error.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
 
+    LaunchedEffect(error) { error?.let { snackbarHostState.showSnackbar(it); messageViewModel.clearError() } }
     LaunchedEffect(user.id) { messageViewModel.refreshConversations(user.id) }
 
     var selectedConversation by remember { mutableStateOf<String?>(null) }
@@ -41,6 +45,7 @@ fun MensajesScreen(
 
     if (selectedConversation == null) {
         Scaffold(
+            snackbarHost = { SnackbarHost(snackbarHostState) },
             topBar = {
                 TopAppBar(
                     title = { Text("Mensajes") },
@@ -48,7 +53,11 @@ fun MensajesScreen(
                 )
             }
         ) { padding ->
-            if (myConversations.isEmpty()) {
+            if (isLoading && myConversations.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else if (myConversations.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                     EmptyState(icon = Icons.Default.ChatBubbleOutline, title = "Sin conversaciones", subtitle = "Las conversaciones con tus inquilinos aparecerán aquí.")
                 }
@@ -107,6 +116,7 @@ fun MensajesScreen(
         val receiverId = conv?.participants?.firstOrNull { it != user.id } ?: ""
 
         Scaffold(
+            snackbarHost = { SnackbarHost(snackbarHostState) },
             topBar = {
                 TopAppBar(
                     title = { Text(conv?.otherUserName?.ifBlank { "Conversación" } ?: "Conversación") },
@@ -151,7 +161,11 @@ fun MensajesScreen(
                 }
             }
         ) { padding ->
-            LazyColumn(
+            if (isLoading && messages.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else LazyColumn(
                 state = listState,
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),

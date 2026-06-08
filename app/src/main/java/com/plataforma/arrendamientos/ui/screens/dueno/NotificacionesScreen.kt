@@ -33,7 +33,11 @@ fun NotificacionesScreen(
     val authState by authViewModel.authState.collectAsState()
     val user = authState.user ?: return
     val allNotifications by notificationViewModel.notifications.collectAsState()
+    val isLoading by notificationViewModel.isLoading.collectAsState()
+    val error by notificationViewModel.error.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
 
+    LaunchedEffect(error) { error?.let { snackbarHostState.showSnackbar(it); notificationViewModel.clearError() } }
     LaunchedEffect(user.id) { notificationViewModel.refreshNotifications(user.id) }
 
     val myNotifications = allNotifications.filter { it.userId == user.id }
@@ -43,6 +47,7 @@ fun NotificacionesScreen(
     val displayed = if (filterUnread) myNotifications.filter { !it.leida } else myNotifications
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
@@ -85,7 +90,11 @@ fun NotificacionesScreen(
                 )
             }
 
-            if (displayed.isEmpty()) {
+            if (isLoading && displayed.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else if (displayed.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     EmptyState(
                         icon = Icons.Default.NotificationsNone,
@@ -126,7 +135,11 @@ fun NotificacionesInquilinoScreen(
     val authState by authViewModel.authState.collectAsState()
     val user = authState.user ?: return
     val allNotifications by notificationViewModel.notifications.collectAsState()
+    val isLoading by notificationViewModel.isLoading.collectAsState()
+    val error by notificationViewModel.error.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
 
+    LaunchedEffect(error) { error?.let { snackbarHostState.showSnackbar(it); notificationViewModel.clearError() } }
     LaunchedEffect(user.id) { notificationViewModel.refreshNotifications(user.id) }
 
     val myNotifications = allNotifications.filter { it.userId == user.id }
@@ -136,6 +149,7 @@ fun NotificacionesInquilinoScreen(
     val displayed = if (filterUnread) myNotifications.filter { !it.leida } else myNotifications
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
@@ -177,7 +191,11 @@ fun NotificacionesInquilinoScreen(
                 )
             }
 
-            if (displayed.isEmpty()) {
+            if (isLoading && displayed.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else if (displayed.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     EmptyState(
                         icon = Icons.Default.NotificationsNone,

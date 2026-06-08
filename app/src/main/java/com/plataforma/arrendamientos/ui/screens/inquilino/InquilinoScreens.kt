@@ -39,7 +39,11 @@ fun MensajesInquilinoScreen(
     val user = authState.user ?: return
     val conversations by messageViewModel.conversations.collectAsState()
     val myConversations = messageViewModel.getConversationsByUser(user.id)
+    val isLoading by messageViewModel.isLoading.collectAsState()
+    val error by messageViewModel.error.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
 
+    LaunchedEffect(error) { error?.let { snackbarHostState.showSnackbar(it); messageViewModel.clearError() } }
     LaunchedEffect(user.id) { messageViewModel.refreshConversations(user.id) }
 
     var selectedConversation by remember { mutableStateOf<String?>(null) }
@@ -48,6 +52,7 @@ fun MensajesInquilinoScreen(
 
     if (selectedConversation == null) {
         Scaffold(
+            snackbarHost = { SnackbarHost(snackbarHostState) },
             topBar = {
                 TopAppBar(
                     title = { Text("Mensajes") },
@@ -55,7 +60,11 @@ fun MensajesInquilinoScreen(
                 )
             }
         ) { padding ->
-            if (myConversations.isEmpty()) {
+            if (isLoading && myConversations.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else if (myConversations.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                     EmptyState(
                         icon = Icons.Default.ChatBubbleOutline,
@@ -118,6 +127,7 @@ fun MensajesInquilinoScreen(
         val receiverId = conv?.participants?.firstOrNull { it != user.id } ?: ""
 
         Scaffold(
+            snackbarHost = { SnackbarHost(snackbarHostState) },
             topBar = {
                 TopAppBar(
                     title = { Text(conv?.otherUserName?.ifBlank { "Conversación" } ?: "Conversación") },
