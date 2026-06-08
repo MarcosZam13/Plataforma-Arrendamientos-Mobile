@@ -73,7 +73,7 @@ class AuthRepository @Inject constructor(
                     404  -> "👤 Usuario no encontrado"
                     429  -> "⏳ Demasiados intentos, esperá un momento"
                     503  -> "🏖️ El servidor está de vacaciones, volvé pronto"
-                    else -> "Error ${response.code()}: ${response.message()}"
+                    else -> "💥 Error inesperado (${response.code()}). Intentá de nuevo."
                 }
                 Result.failure(Exception(msg))
             }
@@ -84,7 +84,7 @@ class AuthRepository @Inject constructor(
 
     suspend fun register(nombre: String, correo: String, contrasena: String, rol: UserRole): Result<User> {
         return try {
-            val rolStr = if (rol == UserRole.DUENO) "dueno" else "arrendatario"
+            val rolStr = if (rol == UserRole.DUENO) "DUENO" else "INQUILINO"
             val response = apiService.register(RegisterRequest(nombre, correo, contrasena, rolStr))
             if (response.isSuccessful) {
                 val body = response.body()
@@ -101,10 +101,11 @@ class AuthRepository @Inject constructor(
                 Result.success(user)
             } else {
                 val msg = when (response.code()) {
+                    401  -> "🔐 Error de autenticación con el servidor. Intentá de nuevo."
                     409  -> "📧 Este correo ya está registrado"
                     400  -> "📋 Datos de registro inválidos"
                     503  -> "🏖️ El servidor de usuarios está de descanso"
-                    else -> "Error ${response.code()}: ${response.message()}"
+                    else -> "💥 Error inesperado (${response.code()}). Intentá de nuevo."
                 }
                 Result.failure(Exception(msg))
             }
