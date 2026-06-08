@@ -77,11 +77,17 @@ fun AppNavigation() {
             arguments = listOf(navArgument("propiedadId") { type = NavType.StringType })
         ) { backStackEntry ->
             val propiedadId = backStackEntry.arguments?.getString("propiedadId") ?: ""
+            val user = authState.user
             PropiedadDetalleScreen(
                 propiedadId = propiedadId,
-                currentUser = authState.user,
+                currentUser = user,
                 onBack = { navController.popBackStack() },
-                onLogin = { navController.navigate(Screen.Login.route) }
+                onLogin = { navController.navigate(Screen.Login.route) },
+                onContactar = if (user != null) ({
+                    val dest = if (user.rol == UserRole.DUENO) Screen.MensajesDueno.route
+                               else Screen.MensajesInquilino.route
+                    navController.navigate(dest)
+                }) else null
             )
         }
 

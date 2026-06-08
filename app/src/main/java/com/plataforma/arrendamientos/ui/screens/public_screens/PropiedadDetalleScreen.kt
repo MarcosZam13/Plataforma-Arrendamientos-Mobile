@@ -30,6 +30,7 @@ fun PropiedadDetalleScreen(
     currentUser: User?,
     onBack: () -> Unit,
     onLogin: () -> Unit,
+    onContactar: (() -> Unit)? = null,
     propertyViewModel: PropertyViewModel = hiltViewModel()
 ) {
     val property = propertyViewModel.getPropertyById(propiedadId)
@@ -91,10 +92,14 @@ fun PropiedadDetalleScreen(
                         )
                     }
                     Button(
-                        onClick = if (currentUser != null) { {} } else onLogin,
+                        onClick = when {
+                            currentUser == null -> onLogin
+                            onContactar != null -> onContactar
+                            else -> ({})
+                        },
                         modifier = Modifier.height(48.dp)
                     ) {
-                        Text(if (currentUser != null) "Contactar" else "Iniciar sesión")
+                        Text(if (currentUser != null) "Contactar dueño" else "Iniciar sesión")
                     }
                 }
             }
