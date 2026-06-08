@@ -448,6 +448,14 @@ data class RegisterRequest(
 )
 
 @Serializable
+data class LoginUsuario(
+    val id: String = "",
+    val nombre: String = "",
+    val correo: String = "",
+    val rol: String = ""
+)
+
+@Serializable
 data class LoginResponse(
     val token: String = "",
     val accessToken: String = "",
@@ -457,12 +465,14 @@ data class LoginResponse(
     val correo: String = "",
     val email: String = "",
     val rol: String = "",
-    val role: String = ""
+    val role: String = "",
+    val usuario: LoginUsuario? = null
 ) {
     fun resolveToken() = token.ifBlank { accessToken }
-    fun resolveUserId() = id.ifBlank { userId }
-    fun resolveEmail() = correo.ifBlank { email }
-    fun resolveRole() = rol.ifBlank { role }.lowercase()
+    fun resolveUserId() = id.ifBlank { userId.ifBlank { usuario?.id ?: "" } }
+    fun resolveNombre() = nombre.ifBlank { usuario?.nombre ?: "" }
+    fun resolveEmail() = correo.ifBlank { email.ifBlank { usuario?.correo ?: "" } }
+    fun resolveRole() = rol.ifBlank { role.ifBlank { usuario?.rol ?: "" } }.lowercase()
 }
 
 // ─── MS Mensajes — shapes reales de la API ───────────────────────────────────

@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.plataforma.arrendamientos.BuildConfig
 import com.plataforma.arrendamientos.data.model.User
 import com.plataforma.arrendamientos.data.model.UserRole
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -24,8 +25,6 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "auth_prefs")
-
-private const val BASE_URL = "https://arrendamientos-ms-users-ejhebkchgmcucgf3.eastus-01.azurewebsites.net"
 
 // ─── DTOs de respuesta del MS de Usuarios ────────────────────────────────────
 
@@ -81,7 +80,8 @@ class AuthRepository @Inject constructor(
             try {
                 val body = """{"correo":"${correo.trim().lowercase()}","contrasena":"$contrasena"}"""
                 val request = Request.Builder()
-                    .url("$BASE_URL/api/auth/login")
+                    .url("${BuildConfig.API_BASE_URL}auth/login")
+                    .addHeader("Ocp-Apim-Subscription-Key", BuildConfig.APIM_SUBSCRIPTION_KEY)
                     .post(body.toRequestBody(JSON_MEDIA))
                     .build()
 
@@ -97,7 +97,15 @@ class AuthRepository @Inject constructor(
                     val error = runCatching {
                         json.decodeFromString<ErrorResponseDto>(responseBody)
                     }.getOrNull()
-                    Result.failure(Exception(error?.message?.ifBlank { error.error } ?: "Correo o contraseña incorrectos"))
+                    val msg = when (response.code()) {
+                        401  -> "🔐 Correo o contraseña incorrectos"
+                        404  -> "👤 Usuario no encontrado"
+                        429  -> "⏳ Demasiados intentos, esperá un momento"
+                        503  -> "🏖️ El servidor está de vacaciones, volvé pronto"
+                        else -> error?.message?.ifBlank { error.error }
+                            ?: "💥 Error inesperado (${response.code()}). Intentá de nuevo."
+                    }
+                    Result.failure(Exception(msg))
                 }
             } catch (e: Exception) {
                 Result.failure(Exception("No se pudo conectar al servidor. Verificá tu conexión."))
@@ -112,7 +120,8 @@ class AuthRepository @Inject constructor(
                 val rolStr = rol.name.lowercase()
                 val body = """{"nombre":"${nombre.trim()}","correo":"${correo.trim().lowercase()}","contrasena":"$contrasena","rol":"$rolStr"}"""
                 val request = Request.Builder()
-                    .url("$BASE_URL/api/auth/registro")
+                    .url("${BuildConfig.API_BASE_URL}auth/registro")
+                    .addHeader("Ocp-Apim-Subscription-Key", BuildConfig.APIM_SUBSCRIPTION_KEY)
                     .post(body.toRequestBody(JSON_MEDIA))
                     .build()
 
@@ -128,7 +137,14 @@ class AuthRepository @Inject constructor(
                     val error = runCatching {
                         json.decodeFromString<ErrorResponseDto>(responseBody)
                     }.getOrNull()
-                    Result.failure(Exception(error?.message?.ifBlank { error.error } ?: "No se pudo crear la cuenta. Intentá de nuevo."))
+                    val msg = when (response.code()) {
+                        409  -> "📧 Este correo ya está registrado"
+                        400  -> "📋 Datos de registro inválidos"
+                        503  -> "🏖️ El servidor de usuarios está de descanso"
+                        else -> error?.message?.ifBlank { error.error }
+                            ?: "💥 Error inesperado (${response.code()}). Intentá de nuevo."
+                    }
+                    Result.failure(Exception(msg))
                 }
             } catch (e: Exception) {
                 Result.failure(Exception("No se pudo conectar al servidor. Verificá tu conexión."))
@@ -167,7 +183,7 @@ class AuthRepository @Inject constructor(
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
     private fun LoginResponseDto.toUser(): User {
-        val rol = when (usuario.rol.trim().lowercase()) {
+        val rolNorm = when (usuario.rol.trim().lowercase()) {
             "dueno"     -> UserRole.DUENO
             "inquilino" -> UserRole.INQUILINO
             else        -> UserRole.INQUILINO
@@ -176,7 +192,7 @@ class AuthRepository @Inject constructor(
             id     = usuario.id,
             nombre = usuario.nombre,
             correo = usuario.correo,
-            rol    = rol
+            rol    = rolNorm
         )
     }
 
