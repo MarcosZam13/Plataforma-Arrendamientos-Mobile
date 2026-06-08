@@ -91,10 +91,14 @@ fun NuevaPropiedadScreen(
                 OutlinedTextField(
                     value = descripcion,
                     onValueChange = { descripcion = it },
-                    label = { Text("Descripción") },
+                    label = { Text("Descripción (mín. 10 caracteres)") },
                     modifier = Modifier.fillMaxWidth().height(100.dp),
                     maxLines = 4,
-                    shape = RoundedCornerShape(10.dp)
+                    shape = RoundedCornerShape(10.dp),
+                    isError = descripcion.isNotEmpty() && descripcion.length < 10,
+                    supportingText = if (descripcion.isNotEmpty() && descripcion.length < 10) {
+                        { Text("Mínimo 10 caracteres (${descripcion.length}/10)") }
+                    } else null
                 )
 
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -255,7 +259,7 @@ fun NuevaPropiedadScreen(
                     )
                 },
                 modifier = Modifier.fillMaxWidth().height(52.dp),
-                enabled = !isLoading && titulo.isNotBlank() && precio.isNotBlank() && canton.isNotBlank(),
+                enabled = !isLoading && titulo.isNotBlank() && descripcion.length >= 10 && precio.isNotBlank() && canton.isNotBlank() && distrito.isNotBlank(),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 if (isLoading) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
