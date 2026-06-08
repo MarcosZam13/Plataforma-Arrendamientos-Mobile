@@ -28,14 +28,18 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(): OkHttpClient =
+    fun provideTokenHolder(): TokenHolder = TokenHolder()
+
+    @Provides
+    @Singleton
+    fun provideOkHttpClient(tokenHolder: TokenHolder): OkHttpClient =
         OkHttpClient.Builder()
             .addInterceptor { chain ->
-                val req = chain.request().newBuilder()
+                val builder = chain.request().newBuilder()
                     .addHeader("Ocp-Apim-Subscription-Key", BuildConfig.APIM_SUBSCRIPTION_KEY)
                     .addHeader("Content-Type", "application/json")
-                    .build()
-                chain.proceed(req)
+                tokenHolder.token?.let { builder.addHeader("Authorization", "Bearer $it") }
+                chain.proceed(builder.build())
             }
             .addInterceptor(
                 HttpLoggingInterceptor().apply {

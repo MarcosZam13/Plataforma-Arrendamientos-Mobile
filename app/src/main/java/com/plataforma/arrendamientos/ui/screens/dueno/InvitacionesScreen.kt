@@ -33,17 +33,24 @@ fun InvitacionesScreen(
 ) {
     val authState by authViewModel.authState.collectAsState()
     val user = authState.user ?: return
+    val allInvitations by invitationViewModel.invitations.collectAsState()
+    val invitations = allInvitations.filter { it.duenoId == user.id }
+    val error by invitationViewModel.error.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    var refreshKey by remember { mutableStateOf(0) }
-    val invitations = remember(refreshKey) { invitationViewModel.getInvitationsByOwner(user.id) }
+    LaunchedEffect(user.id) { invitationViewModel.refreshInvitations(user.id) }
+    LaunchedEffect(error) {
+        error?.let { snackbarHostState.showSnackbar(it); invitationViewModel.clearError() }
+    }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Invitaciones") },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, null) } },
                 actions = {
-                    IconButton(onClick = { refreshKey++ }) {
+                    IconButton(onClick = { invitationViewModel.refreshInvitations(user.id) }) {
                         Icon(Icons.Default.Refresh, contentDescription = "Actualizar")
                     }
                 }
@@ -122,7 +129,7 @@ fun InvitacionesScreen(
                             if (invitation.estado == InvitationStatus.PENDIENTE) {
                                 Spacer(Modifier.height(12.dp))
                                 OutlinedButton(
-                                    onClick = { invitationViewModel.cancelInvitation(invitation.id) },
+                                    onClick = { invitationViewModel.cancelInvitation(invitation.id) {} },
                                     modifier = Modifier.fillMaxWidth(),
                                     colors = ButtonDefaults.outlinedButtonColors(contentColor = StatusRed)
                                 ) {

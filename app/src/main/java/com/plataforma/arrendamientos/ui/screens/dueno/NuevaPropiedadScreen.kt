@@ -48,9 +48,16 @@ fun NuevaPropiedadScreen(
     var luzIncluida by remember { mutableStateOf(false) }
     var internetIncluido by remember { mutableStateOf(false) }
     var seguridad by remember { mutableStateOf(false) }
-    var isLoading by remember { mutableStateOf(false) }
+    val isLoading by propertyViewModel.isLoading.collectAsState()
+    val error by propertyViewModel.error.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(error) {
+        error?.let { snackbarHostState.showSnackbar(it); propertyViewModel.clearError() }
+    }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Nueva propiedad") },
@@ -217,7 +224,6 @@ fun NuevaPropiedadScreen(
 
             Button(
                 onClick = {
-                    isLoading = true
                     propertyViewModel.addProperty(
                         Property(
                             id = "prop-${System.currentTimeMillis()}",
@@ -244,10 +250,9 @@ fun NuevaPropiedadScreen(
                                 internetIncluido = internetIncluido,
                                 seguridad = seguridad
                             )
-                        )
+                        ),
+                        onSuccess = onSuccess
                     )
-                    isLoading = false
-                    onSuccess()
                 },
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 enabled = !isLoading && titulo.isNotBlank() && precio.isNotBlank() && canton.isNotBlank(),

@@ -28,6 +28,7 @@ class AuthViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
+            authRepository.restoreToken()
             authRepository.currentUser.collect { user ->
                 _authState.update { it.copy(user = user) }
             }

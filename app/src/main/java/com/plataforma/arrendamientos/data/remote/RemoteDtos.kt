@@ -434,6 +434,193 @@ data class CreateUserRequest(
     val rol: String
 )
 
+// ─── Auth DTOs ────────────────────────────────────────────────────────────────
+
+@Serializable
+data class LoginRequest(val correo: String, val contrasena: String)
+
+@Serializable
+data class RegisterRequest(
+    val nombre: String,
+    val correo: String,
+    val contrasena: String,
+    val rol: String
+)
+
+@Serializable
+data class LoginResponse(
+    val token: String = "",
+    val accessToken: String = "",
+    val id: String = "",
+    val userId: String = "",
+    val nombre: String = "",
+    val correo: String = "",
+    val email: String = "",
+    val rol: String = "",
+    val role: String = ""
+) {
+    fun getToken() = token.ifBlank { accessToken }
+    fun getUserId() = id.ifBlank { userId }
+    fun getEmail() = correo.ifBlank { email }
+    fun getRole() = rol.ifBlank { role }.lowercase()
+}
+
+// ─── MS Mensajes — shapes reales de la API ───────────────────────────────────
+
+@Serializable
+data class MsMensajesConversacionItem(
+    @SerialName("_id") val id: String = "",
+    val propiedad_id: String = "",
+    val arrendador_id: String = "",
+    val arrendatario_id: String = "",
+    val creado_en: String = ""
+)
+
+@Serializable
+data class MsMensajesConversacionEntry(
+    val conversacion: MsMensajesConversacionItem = MsMensajesConversacionItem(),
+    val ultimo_mensaje: String? = null,
+    val ultimo_enviado_en: String? = null,
+    val no_leidos: Int = 0
+) {
+    fun toDomain(currentUserId: String): Conversation? {
+        val c = conversacion
+        if (c.id.isBlank()) return null
+        val unread = if (currentUserId == c.arrendador_id)
+            mapOf(c.arrendador_id to no_leidos)
+        else
+            mapOf(c.arrendatario_id to no_leidos)
+        return Conversation(
+            id = c.id,
+            participants = listOf(c.arrendador_id, c.arrendatario_id),
+            propertyId = c.propiedad_id,
+            lastMessage = ultimo_mensaje,
+            lastMessageAt = ultimo_enviado_en,
+            unreadCount = unread,
+            createdAt = c.creado_en,
+            arrendadorId = c.arrendador_id,
+            arrendatarioId = c.arrendatario_id
+        )
+    }
+}
+
+@Serializable
+data class MsMensajesConversacionesResponse(
+    val conversaciones: List<MsMensajesConversacionEntry> = emptyList(),
+    val total: Int = 0
+)
+
+@Serializable
+data class MsMensajesMensajeItem(
+    val id: String = "",
+    val remitente_id: String = "",
+    val contenido: String = "",
+    val leido: Boolean = false,
+    val enviado_en: String = ""
+) {
+    fun toDomain(conversacionId: String): Message? {
+        if (id.isBlank()) return null
+        return Message(
+            id = id,
+            conversationId = conversacionId,
+            senderId = remitente_id,
+            receiverId = "",
+            content = contenido,
+            type = MessageType.TEXT,
+            status = if (leido) MessageStatus.READ else MessageStatus.SENT,
+            timestamp = enviado_en
+        )
+    }
+}
+
+@Serializable
+data class MsMensajesHistorialResponse(
+    val conversacion_id: String = "",
+    val mensajes: List<MsMensajesMensajeItem> = emptyList(),
+    val total: Int = 0
+)
+
+@Serializable
+data class MsMensajesEnviarRequest(
+    val destinatario_id: String,
+    val propiedad_id: String,
+    val contenido: String,
+    val arrendador_id: String,
+    val arrendatario_id: String
+)
+
+@Serializable
+data class MsMensajesDatos(
+    val mensaje_id: String = "",
+    val conversacion_id: String = "",
+    val destinatario_id: String = "",
+    val contenido: String = "",
+    val remitente_id: String = "",
+    val remitente_nombre: String = "",
+    val enviado_en: String = ""
+) {
+    fun toDomain(): Message? {
+        if (mensaje_id.isBlank()) return null
+        return Message(
+            id = mensaje_id,
+            conversationId = conversacion_id,
+            senderId = remitente_id,
+            receiverId = destinatario_id,
+            content = contenido,
+            type = MessageType.TEXT,
+            status = MessageStatus.SENT,
+            timestamp = enviado_en
+        )
+    }
+}
+
+@Serializable
+data class MsMensajesEnviarResponse(
+    val mensaje: String = "",
+    val datos: MsMensajesDatos = MsMensajesDatos()
+)
+
+// ─── MS Notificaciones — shapes reales de la API ─────────────────────────────
+
+@Serializable
+data class MsNotificacionItem(
+    val id: String = "",
+    val usuario_id: String = "",
+    val tipo: String = "mensaje_nuevo",
+    val titulo: String = "",
+    val cuerpo: String = "",
+    val leida: Boolean = false,
+    val creada_en: String = ""
+) {
+    fun toDomain(): AppNotification? {
+        if (id.isBlank()) return null
+        return AppNotification(
+            id = id,
+            userId = usuario_id,
+            tipo = when (tipo.lowercase()) {
+                "contrato_firmado" -> NotificationType.CONTRATO_ACTIVO
+                "pago_aprobado" -> NotificationType.PAGO_APROBADO
+                "pago_rechazado" -> NotificationType.PAGO_RECHAZADO
+                "nuevo_mensaje" -> NotificationType.MENSAJE_NUEVO
+                else -> NotificationType.MENSAJE_NUEVO
+            },
+            titulo = titulo,
+            mensaje = cuerpo,
+            leida = leida,
+            fecha = creada_en
+        )
+    }
+}
+
+@Serializable
+data class MsNotificacionesResponse(
+    val items: List<MsNotificacionItem> = emptyList(),
+    val total: Int = 0,
+    val pagina: Int = 1,
+    val tamano_pagina: Int = 20,
+    val total_paginas: Int = 1
+)
+
 // ─── Domain → Request mappers ─────────────────────────────────────────────────
 
 fun Property.toCreateRequest() = CreatePropertyRequest(

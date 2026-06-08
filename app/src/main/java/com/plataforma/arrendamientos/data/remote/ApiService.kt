@@ -5,7 +5,15 @@ import retrofit2.http.*
 
 interface ApiService {
 
-    // ─── Properties ──────────────────────────────────────────────────────────
+    // ─── Auth ─────────────────────────────────────────────────────────────────
+
+    @POST("auth/login")
+    suspend fun login(@Body body: LoginRequest): Response<LoginResponse>
+
+    @POST("auth/registro")
+    suspend fun register(@Body body: RegisterRequest): Response<LoginResponse>
+
+    // ─── Properties ───────────────────────────────────────────────────────────
 
     @GET("propiedades")
     suspend fun getProperties(): Response<List<PropertyDto>>
@@ -73,7 +81,7 @@ interface ApiService {
     suspend fun getPaymentsByUser(@Path("userId") userId: String): Response<List<PaymentDto>>
 
     @POST("pagos")
-    suspend fun createPayment(@Body body: CreatePaymentRequest): Response<PaymentResponseDto>
+    suspend fun createPayment(@Body body: CreatePaymentRequest): Response<PaymentDto>
 
     @PUT("pagos/{id}")
     suspend fun updatePayment(
@@ -81,39 +89,25 @@ interface ApiService {
         @Body body: UpdatePaymentRequest
     ): Response<PaymentDto>
 
-    // ─── Notifications ────────────────────────────────────────────────────────
+    // ─── MS Notificaciones ────────────────────────────────────────────────────
 
     @GET("notificaciones/{userId}")
-    suspend fun getNotificationsByUser(@Path("userId") userId: String): Response<List<NotificationDto>>
-
-    @POST("notificaciones")
-    suspend fun createNotification(@Body body: CreateNotificationRequest): Response<NotificationDto>
+    suspend fun getNotificacionesByUser(@Path("userId") userId: String): Response<MsNotificacionesResponse>
 
     @PUT("notificaciones/{id}")
-    suspend fun updateNotification(
+    suspend fun marcarNotificacionLeida(
         @Path("id") id: String,
         @Body body: UpdateNotificationRequest
-    ): Response<NotificationDto>
+    ): Response<Unit>
 
-    // ─── Conversations ────────────────────────────────────────────────────────
+    // ─── MS Mensajes ──────────────────────────────────────────────────────────
 
     @GET("conversaciones/{userId}")
-    suspend fun getConversationsByUser(@Path("userId") userId: String): Response<List<ConversationDto>>
+    suspend fun getConversacionesByUser(@Path("userId") userId: String): Response<MsMensajesConversacionesResponse>
 
-    @POST("conversaciones")
-    suspend fun createConversation(@Body body: CreateConversationRequest): Response<ConversationDto>
-
-    // ─── Messages ─────────────────────────────────────────────────────────────
-
-    @GET("mensajes/{userId}")
-    suspend fun getMessagesByUser(@Path("userId") userId: String): Response<List<MessageDto>>
+    @GET("mensajes/{conversationId}")
+    suspend fun getHistorialMensajes(@Path("conversationId") conversationId: String): Response<MsMensajesHistorialResponse>
 
     @POST("mensajes")
-    suspend fun createMessage(@Body body: CreateMessageRequest): Response<MessageDto>
-
-    @PUT("mensajes/{id}")
-    suspend fun updateMessage(
-        @Path("id") id: String,
-        @Body body: UpdateMessageRequest
-    ): Response<MessageDto>
+    suspend fun enviarMensaje(@Body body: MsMensajesEnviarRequest): Response<MsMensajesEnviarResponse>
 }

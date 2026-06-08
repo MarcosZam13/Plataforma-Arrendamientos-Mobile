@@ -17,11 +17,11 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.plataforma.arrendamientos.data.model.ContractStatus
 import com.plataforma.arrendamientos.data.model.DepositStatus
-import com.plataforma.arrendamientos.data.model.MockData
 import com.plataforma.arrendamientos.ui.components.EmptyState
 import com.plataforma.arrendamientos.ui.components.formatPrice
 import com.plataforma.arrendamientos.ui.theme.*
 import com.plataforma.arrendamientos.viewmodel.AuthViewModel
+import com.plataforma.arrendamientos.viewmodel.ContractViewModel
 import com.plataforma.arrendamientos.viewmodel.PropertyViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -29,13 +29,17 @@ import com.plataforma.arrendamientos.viewmodel.PropertyViewModel
 fun MiContratoScreen(
     onBack: () -> Unit,
     authViewModel: AuthViewModel = hiltViewModel(),
-    propertyViewModel: PropertyViewModel = hiltViewModel()
+    propertyViewModel: PropertyViewModel = hiltViewModel(),
+    contractViewModel: ContractViewModel = hiltViewModel()
 ) {
     val authState by authViewModel.authState.collectAsState()
     val user = authState.user ?: return
     val context = LocalContext.current
 
-    val contract = MockData.MOCK_CONTRACT.takeIf { it.inquilinoId == user.id || true }
+    LaunchedEffect(user.id) { contractViewModel.refresh() }
+
+    val allContracts by contractViewModel.contracts.collectAsState()
+    val contract = allContracts.find { it.inquilinoId == user.id }
     val property = contract?.let { propertyViewModel.getPropertyById(it.propiedadId) }
 
     Scaffold(

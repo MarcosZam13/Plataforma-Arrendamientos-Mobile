@@ -1,6 +1,7 @@
 package com.plataforma.arrendamientos.data.repository
 
 import com.plataforma.arrendamientos.data.model.*
+import com.plataforma.arrendamientos.data.remote.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -9,11 +10,13 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class DataRepository @Inject constructor() {
+class DataRepository @Inject constructor(
+    private val apiService: ApiService
+) {
 
     // ─── Properties ────────────────────────────────────────────────────────────
 
-    private val _properties = MutableStateFlow(MockData.MOCK_PROPERTIES.toMutableList())
+    private val _properties = MutableStateFlow(mutableListOf<Property>())
     val properties: StateFlow<List<Property>> = _properties.asStateFlow()
 
     fun getPropertiesByOwner(duenoId: String) = _properties.value.filter { it.duenoId == duenoId }
@@ -29,6 +32,36 @@ class DataRepository @Inject constructor() {
 
     fun deleteProperty(id: String) {
         _properties.update { list -> list.filter { it.id != id }.toMutableList() }
+    }
+
+    suspend fun refreshProperties(): Result<Unit> = runApiCall {
+        val props = apiService.getProperties().bodyOrThrow().mapNotNull { it.toDomain() }
+        _properties.value = props.toMutableList()
+    }
+
+    suspend fun createPropertyApi(property: Property): Result<Property> = runApiCall {
+        val response = apiService.createProperty(property.toCreateRequest()).bodyOrThrow()
+        val created = response.toDomain() ?: throw Exception("Error al crear propiedad")
+        _properties.update { list -> (list + created).toMutableList() }
+        created
+    }
+
+    suspend fun updatePropertyApi(property: Property): Result<Property> = runApiCall {
+        val req = UpdatePropertyRequest(
+            titulo = property.titulo,
+            descripcion = property.descripcion,
+            precio = property.precio,
+            estado = property.estado.name.lowercase()
+        )
+        val response = apiService.updateProperty(property.id, req).bodyOrThrow()
+        val updated = response.toDomain() ?: property
+        updateProperty(updated)
+        updated
+    }
+
+    suspend fun deletePropertyApi(id: String): Result<Unit> = runApiCall {
+        apiService.deleteProperty(id)
+        deleteProperty(id)
     }
 
     // ─── Invitations ───────────────────────────────────────────────────────────
@@ -53,9 +86,35 @@ class DataRepository @Inject constructor() {
         }
     }
 
+    suspend fun refreshInvitations(userId: String? = null): Result<Unit> = runApiCall {
+        val items = apiService.getInvitations().bodyOrThrow().mapNotNull { it.toDomain() }
+        _invitations.value = if (userId != null) items.filter { it.duenoId == userId || it.inquilinoCorreo != null }.toMutableList()
+                             else items.toMutableList()
+    }
+
+    suspend fun createInvitationApi(invitation: Invitation): Result<Invitation> = runApiCall {
+        val response = apiService.createInvitation(invitation.toCreateRequest()).bodyOrThrow()
+        val created = response.toDomain() ?: invitation
+        addInvitation(created)
+        created
+    }
+
+    suspend fun updateInvitationStatusApi(id: String, estado: String): Result<Unit> = runApiCall {
+        apiService.updateInvitation(id, UpdateInvitationRequest(estado = estado))
+        val inv = _invitations.value.find { it.id == id }
+        if (inv != null) {
+            val newStatus = when (estado.lowercase()) {
+                "aceptada"  -> InvitationStatus.ACEPTADA
+                "cancelada" -> InvitationStatus.CANCELADA
+                else        -> inv.estado
+            }
+            updateInvitation(inv.copy(estado = newStatus))
+        }
+    }
+
     // ─── Contracts ─────────────────────────────────────────────────────────────
 
-    private val _contracts = MutableStateFlow(mutableListOf(MockData.MOCK_CONTRACT))
+    private val _contracts = MutableStateFlow(mutableListOf<Contract>())
     val contracts: StateFlow<List<Contract>> = _contracts.asStateFlow()
 
     fun getContractByInquilino(inquilinoId: String) =
@@ -67,9 +126,24 @@ class DataRepository @Inject constructor() {
         _contracts.update { list -> (list + contract).toMutableList() }
     }
 
+    suspend fun refreshContracts(): Result<Unit> = runApiCall {
+        val items = apiService.getContracts().bodyOrThrow().mapNotNull { it.toDomain() }
+        _contracts.value = items.toMutableList()
+    }
+
+    fun getContractByUser(userId: String): Contract? =
+        _contracts.value.find { it.inquilinoId == userId || it.duenoId == userId }
+
+    suspend fun createContractApi(contract: Contract): Result<Contract> = runApiCall {
+        val response = apiService.createContract(contract.toCreateRequest()).bodyOrThrow()
+        val created = response.toDomain() ?: contract
+        addContract(created)
+        created
+    }
+
     // ─── Payments ──────────────────────────────────────────────────────────────
 
-    private val _payments = MutableStateFlow(MockData.MOCK_PAYMENTS.toMutableList())
+    private val _payments = MutableStateFlow(mutableListOf<Payment>())
     val payments: StateFlow<List<Payment>> = _payments.asStateFlow()
 
     fun getPaymentsByContract(contratoId: String) = _payments.value.filter { it.contratoId == contratoId }
@@ -102,13 +176,32 @@ class DataRepository @Inject constructor() {
         }
     }
 
-    // ─── Notifications ─────────────────────────────────────────────────────────
+    suspend fun refreshPayments(userId: String): Result<Unit> = runApiCall {
+        val items = apiService.getPaymentsByUser(userId).bodyOrThrow().mapNotNull { it.toDomain() }
+        _payments.value = items.toMutableList()
+    }
 
-    private val _notifications = MutableStateFlow(MockData.MOCK_NOTIFICATIONS.toMutableList())
+    suspend fun createPaymentApi(payment: Payment): Result<Payment> = runApiCall {
+        val response = apiService.createPayment(payment.toCreateRequest()).bodyOrThrow()
+        val created = response.toDomain() ?: payment
+        addPayment(created)
+        created
+    }
+
+    suspend fun updatePaymentStatusApi(id: String, estado: String, motivo: String? = null): Result<Unit> = runApiCall {
+        apiService.updatePayment(id, UpdatePaymentRequest(estado = estado, motivoRechazo = motivo))
+        when (estado.lowercase()) {
+            "aprobado"  -> approvePayment(id)
+            "rechazado" -> if (motivo != null) rejectPayment(id, motivo)
+        }
+    }
+
+    // ─── Notifications (MS Notificaciones) ─────────────────────────────────────
+
+    private val _notifications = MutableStateFlow(mutableListOf<AppNotification>())
     val notifications: StateFlow<List<AppNotification>> = _notifications.asStateFlow()
 
     fun getNotificationsByUser(userId: String) = _notifications.value.filter { it.userId == userId }
-
     fun getUnreadCountByUser(userId: String) = _notifications.value.count { it.userId == userId && !it.leida }
 
     fun addNotification(notification: AppNotification) {
@@ -127,12 +220,23 @@ class DataRepository @Inject constructor() {
         }
     }
 
-    // ─── Messages ──────────────────────────────────────────────────────────────
+    suspend fun refreshNotifications(userId: String): Result<Unit> = runApiCall {
+        val response = apiService.getNotificacionesByUser(userId).bodyOrThrow()
+        val items = response.items.mapNotNull { it.toDomain() }
+        _notifications.value = items.toMutableList()
+    }
 
-    private val _conversations = MutableStateFlow(MockData.MOCK_CONVERSATIONS)
+    suspend fun markNotificationReadApi(notificacionId: String): Result<Unit> = runApiCall {
+        apiService.marcarNotificacionLeida(notificacionId, UpdateNotificationRequest(leida = true))
+        markNotificationRead(notificacionId)
+    }
+
+    // ─── Messages + Conversations (MS Mensajes) ────────────────────────────────
+
+    private val _conversations = MutableStateFlow(listOf<Conversation>())
     val conversations: StateFlow<List<Conversation>> = _conversations.asStateFlow()
 
-    private val _messages = MutableStateFlow(MockData.MOCK_MESSAGES)
+    private val _messages = MutableStateFlow(mutableListOf<Message>())
     val messages: StateFlow<List<Message>> = _messages.asStateFlow()
 
     fun getConversationsByUser(userId: String) = _conversations.value.filter { userId in it.participants }
@@ -140,21 +244,8 @@ class DataRepository @Inject constructor() {
     fun getMessagesByConversation(conversationId: String) =
         _messages.value.filter { it.conversationId == conversationId }
 
-    fun sendMessage(message: Message) {
+    fun addLocalMessage(message: Message) {
         _messages.update { list -> (list + message).toMutableList() }
-        _conversations.update { list ->
-            list.map {
-                if (it.id == message.conversationId) {
-                    val newUnread = it.unreadCount.toMutableMap()
-                    newUnread[message.receiverId] = (newUnread[message.receiverId] ?: 0) + 1
-                    it.copy(
-                        lastMessage = message.content,
-                        lastMessageAt = message.timestamp,
-                        unreadCount = newUnread
-                    )
-                } else it
-            }.toMutableList()
-        }
     }
 
     fun markMessagesAsRead(conversationId: String, userId: String) {
@@ -172,13 +263,68 @@ class DataRepository @Inject constructor() {
     fun getOrCreateConversation(user1Id: String, user2Id: String, propertyId: String? = null): Conversation {
         val existing = _conversations.value.find { user1Id in it.participants && user2Id in it.participants }
         if (existing != null) return existing
-        val conv = Conversation(
+        return Conversation(
             id = "conv-${System.currentTimeMillis()}",
             participants = listOf(user1Id, user2Id),
             propertyId = propertyId,
             createdAt = System.currentTimeMillis().toString()
         )
-        _conversations.update { list -> (list + conv).toMutableList() }
-        return conv
     }
+
+    suspend fun refreshConversations(userId: String): Result<Unit> = runApiCall {
+        val response = apiService.getConversacionesByUser(userId).bodyOrThrow()
+        val convs = response.conversaciones.mapNotNull { it.toDomain(userId) }
+        _conversations.value = convs
+    }
+
+    suspend fun refreshMessages(conversationId: String): Result<Unit> = runApiCall {
+        val response = apiService.getHistorialMensajes(conversationId).bodyOrThrow()
+        val msgs = response.mensajes.mapNotNull { it.toDomain(conversationId) }
+        _messages.update { current ->
+            (current.filter { it.conversationId != conversationId } + msgs).toMutableList()
+        }
+    }
+
+    suspend fun sendMessageApi(
+        destinatarioId: String,
+        propiedadId: String,
+        contenido: String,
+        arrendadorId: String,
+        arrendatarioId: String
+    ): Result<Message> = runApiCall {
+        val response = apiService.enviarMensaje(
+            MsMensajesEnviarRequest(
+                destinatario_id  = destinatarioId,
+                propiedad_id     = propiedadId,
+                contenido        = contenido,
+                arrendador_id    = arrendadorId,
+                arrendatario_id  = arrendatarioId
+            )
+        ).bodyOrThrow()
+        val msg = response.datos.toDomain()
+            ?: throw Exception("Respuesta inválida al enviar mensaje")
+        _messages.update { list -> (list + msg).toMutableList() }
+        msg
+    }
+
+    // ─── Helper ────────────────────────────────────────────────────────────────
+
+    private fun <T> retrofit2.Response<T>.bodyOrThrow(): T =
+        if (isSuccessful) body() ?: throw Exception("Respuesta vacía (${code()})")
+        else throw Exception(errorMessageFor(code()))
+
+    private fun errorMessageFor(code: Int) = when (code) {
+        401  -> "🔐 Sesión expirada, volvé a iniciar sesión"
+        403  -> "🚫 No tenés permiso para esto"
+        404  -> "🔍 Recurso no encontrado"
+        503  -> "🏖️ El microservicio está de vacaciones — volvé pronto"
+        else -> "💥 Error $code del servidor"
+    }
+
+    private suspend fun <T> runApiCall(block: suspend () -> T): Result<T> =
+        try {
+            Result.success(block())
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
 }
