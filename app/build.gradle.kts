@@ -12,7 +12,6 @@ plugins {
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
-    alias(libs.plugins.google.services)
 }
 
 val localProps = Properties()
@@ -108,9 +107,6 @@ dependencies {
     // DataStore
     implementation(libs.datastore.preferences)
 
-    // Firebase Cloud Messaging
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.messaging)
 
     // Testing
     testImplementation(libs.junit)
