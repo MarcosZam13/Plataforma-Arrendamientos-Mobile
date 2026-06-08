@@ -46,6 +46,10 @@ fun RegistroScreen(
         authState.user?.let { onRegisterSuccess(it) }
     }
 
+    LaunchedEffect(Unit) {
+        authViewModel.clearError()
+    }
+
     if (showRoleDialog) {
         RoleSelectionDialog(
             nombre = "Usuario Google",
@@ -215,7 +219,7 @@ fun RegistroScreen(
                         return@Button
                     }
                     passwordError = when {
-                        contrasena.length < 6 -> "La contraseña debe tener al menos 6 caracteres"
+                        contrasena.length < 8 -> "La contraseña debe tener al menos 8 caracteres"
                         contrasena != confirmarContrasena -> "Las contraseñas no coinciden"
                         else -> null
                     }

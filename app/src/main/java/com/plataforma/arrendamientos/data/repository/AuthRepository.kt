@@ -8,24 +8,51 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.plataforma.arrendamientos.data.model.User
 import com.plataforma.arrendamientos.data.model.UserRole
-import com.plataforma.arrendamientos.data.remote.ApiService
-import com.plataforma.arrendamientos.data.remote.LoginRequest
-import com.plataforma.arrendamientos.data.remote.RegisterRequest
-import com.plataforma.arrendamientos.di.TokenHolder
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import javax.inject.Inject
 import javax.inject.Singleton
 
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "auth_prefs")
 
+private const val BASE_URL = "https://arrendamientos-ms-users-ejhebkchgmcucgf3.eastus-01.azurewebsites.net"
+
+// ─── DTOs de respuesta del MS de Usuarios ────────────────────────────────────
+
+@Serializable
+private data class UsuarioDto(
+    val id: String = "",
+    val nombre: String = "",
+    val correo: String = "",
+    val rol: String = "",
+    val telefono: String? = null,
+    val avatar: String? = null
+)
+
+@Serializable
+private data class LoginResponseDto(
+    val token: String = "",
+    val refreshToken: String = "",
+    val usuario: UsuarioDto = UsuarioDto()
+)
+
+@Serializable
+private data class ErrorResponseDto(
+    val message: String = "",
+    val error: String = ""
+)
+
 @Singleton
 class AuthRepository @Inject constructor(
-    @ApplicationContext private val context: Context,
-    private val apiService: ApiService,
-    private val tokenHolder: TokenHolder
+    @ApplicationContext private val context: Context
 ) {
     private val USER_ID_KEY    = stringPreferencesKey("user_id")
     private val USER_NAME_KEY  = stringPreferencesKey("user_name")
@@ -33,88 +60,78 @@ class AuthRepository @Inject constructor(
     private val USER_ROLE_KEY  = stringPreferencesKey("user_role")
     private val AUTH_TOKEN_KEY = stringPreferencesKey("auth_token")
 
+    private val client = OkHttpClient()
+    private val json   = Json { ignoreUnknownKeys = true; isLenient = true }
+    private val JSON_MEDIA = "application/json; charset=utf-8".toMediaType()
+
     val currentUser: Flow<User?> = context.dataStore.data.map { prefs ->
         val id     = prefs[USER_ID_KEY]    ?: return@map null
         val nombre = prefs[USER_NAME_KEY]  ?: return@map null
         val correo = prefs[USER_EMAIL_KEY] ?: return@map null
         val rolStr = prefs[USER_ROLE_KEY]  ?: return@map null
-        val rol    = runCatching { UserRole.valueOf(rolStr) }.getOrNull() ?: return@map null
+        val rol    = runCatching { UserRole.valueOf(rolStr.uppercase()) }.getOrNull() ?: return@map null
         User(id = id, nombre = nombre, correo = correo, rol = rol)
     }
 
-    /** Restaura el JWT al TokenHolder al arrancar la app (llamar desde Application/MainActivity). */
-    suspend fun restoreToken() {
-        context.dataStore.data.firstOrNull()?.get(AUTH_TOKEN_KEY)?.let {
-            tokenHolder.token = it
-        }
-    }
-
+    // ─── Login ────────────────────────────────────────────────────────────────
     suspend fun login(correo: String, contrasena: String): Result<User> {
         return try {
-            val response = apiService.login(LoginRequest(correo, contrasena))
+            val body = """{"correo":"${correo.trim().lowercase()}","contrasena":"$contrasena"}"""
+            val request = Request.Builder()
+                .url("$BASE_URL/api/auth/login")
+                .post(body.toRequestBody(JSON_MEDIA))
+                .build()
+
+            val response = client.newCall(request).execute()
+            val responseBody = response.body?.string() ?: ""
+
             if (response.isSuccessful) {
-                val body = response.body()
-                    ?: return Result.failure(Exception("Respuesta vacía del servidor"))
-                val token = body.resolveToken()
-                if (token.isBlank())
-                    return Result.failure(Exception("El servidor no devolvió un token"))
-                tokenHolder.token = token
-                val user = User(
-                    id     = body.resolveUserId(),
-                    nombre = body.nombre.ifBlank { correo },
-                    correo = body.resolveEmail().ifBlank { correo },
-                    rol    = roleFromString(body.resolveRole())
-                )
-                saveUser(user, token)
+                val dto = json.decodeFromString<LoginResponseDto>(responseBody)
+                val user = dto.toUser()
+                saveUser(user, dto.token)
                 Result.success(user)
             } else {
-                val msg = when (response.code()) {
-                    401  -> "🔐 Correo o contraseña incorrectos"
-                    404  -> "👤 Usuario no encontrado"
-                    429  -> "⏳ Demasiados intentos, esperá un momento"
-                    503  -> "🏖️ El servidor está de vacaciones, volvé pronto"
-                    else -> "💥 Error inesperado (${response.code()}). Intentá de nuevo."
-                }
-                Result.failure(Exception(msg))
+                val error = runCatching {
+                    json.decodeFromString<ErrorResponseDto>(responseBody)
+                }.getOrNull()
+                Result.failure(Exception(error?.message?.ifBlank { error.error } ?: "Correo o contraseña incorrectos"))
             }
         } catch (e: Exception) {
-            Result.failure(Exception("🌴 Sin conexión con el servidor. ¿El backend agarró vacaciones?"))
+            Result.failure(Exception("No se pudo conectar al servidor. Verificá tu conexión."))
         }
     }
 
+    // ─── Registro ─────────────────────────────────────────────────────────────
     suspend fun register(nombre: String, correo: String, contrasena: String, rol: UserRole): Result<User> {
         return try {
-            val rolStr = if (rol == UserRole.DUENO) "DUENO" else "INQUILINO"
-            val response = apiService.register(RegisterRequest(nombre, correo, contrasena, rolStr))
+            val rolStr = rol.name.lowercase()
+            val body = """{"nombre":"${nombre.trim()}","correo":"${correo.trim().lowercase()}","contrasena":"$contrasena","rol":"$rolStr"}"""
+            val request = Request.Builder()
+                .url("$BASE_URL/api/auth/registro")
+                .post(body.toRequestBody(JSON_MEDIA))
+                .build()
+
+            val response = client.newCall(request).execute()
+            val responseBody = response.body?.string() ?: ""
+
             if (response.isSuccessful) {
-                val body = response.body()
-                    ?: return Result.failure(Exception("Respuesta vacía del servidor"))
-                val token = body.resolveToken()
-                tokenHolder.token = token.ifBlank { null }.let { token }
-                val user = User(
-                    id     = body.resolveUserId().ifBlank { "user-${System.currentTimeMillis()}" },
-                    nombre = body.nombre.ifBlank { nombre },
-                    correo = body.resolveEmail().ifBlank { correo },
-                    rol    = rol
-                )
-                saveUser(user, token.ifBlank { "pending-${user.id}" })
+                val dto = json.decodeFromString<LoginResponseDto>(responseBody)
+                val user = dto.toUser()
+                saveUser(user, dto.token)
                 Result.success(user)
             } else {
-                val msg = when (response.code()) {
-                    401  -> "🔐 Error de autenticación con el servidor. Intentá de nuevo."
-                    409  -> "📧 Este correo ya está registrado"
-                    400  -> "📋 Datos de registro inválidos"
-                    503  -> "🏖️ El servidor de usuarios está de descanso"
-                    else -> "💥 Error inesperado (${response.code()}). Intentá de nuevo."
-                }
-                Result.failure(Exception(msg))
+                val error = runCatching {
+                    json.decodeFromString<ErrorResponseDto>(responseBody)
+                }.getOrNull()
+                Result.failure(Exception(error?.message?.ifBlank { error.error } ?: "No se pudo crear la cuenta. Intentá de nuevo."))
             }
         } catch (e: Exception) {
-            Result.failure(Exception("🌴 Sin conexión con el servidor"))
+            Result.failure(Exception("No se pudo conectar al servidor. Verificá tu conexión."))
         }
     }
 
-    fun findUserByEmail(correo: String): User? = null  // ya no usamos mock
+    // ─── Google Sign-In (mock — pendiente implementación real) ────────────────
+    fun findUserByEmail(correo: String): User? = null
 
     suspend fun loginOrRegisterWithGoogle(
         nombre: String,
@@ -122,20 +139,11 @@ class AuthRepository @Inject constructor(
         googleId: String,
         rol: UserRole
     ): Result<User> {
-        // Google Sign-In aún requiere integración Firebase ↔ MS Usuarios.
-        // Por ahora persiste sesión local sin token real.
-        val user = User(
-            id     = "google-$googleId",
-            nombre = nombre,
-            correo = correo,
-            rol    = rol
-        )
-        saveUser(user, "google-token-${user.id}")
-        return Result.success(user)
+        return Result.failure(Exception("Inicio de sesión con Google no está disponible aún."))
     }
 
+    // ─── Logout ───────────────────────────────────────────────────────────────
     suspend fun logout() {
-        tokenHolder.token = null
         context.dataStore.edit { prefs ->
             prefs.remove(USER_ID_KEY)
             prefs.remove(USER_NAME_KEY)
@@ -148,9 +156,23 @@ class AuthRepository @Inject constructor(
     suspend fun isLoggedIn(): Boolean =
         context.dataStore.data.firstOrNull()?.get(AUTH_TOKEN_KEY) != null
 
-    private fun roleFromString(rol: String): UserRole =
-        if (rol.contains("dueno") || rol.contains("dueño") || rol.contains("arrendador"))
-            UserRole.DUENO else UserRole.INQUILINO
+    suspend fun getAuthToken(): String? =
+        context.dataStore.data.firstOrNull()?.get(AUTH_TOKEN_KEY)
+
+    // ─── Helpers ──────────────────────────────────────────────────────────────
+    private fun LoginResponseDto.toUser(): User {
+        val rol = when (usuario.rol.trim().lowercase()) {
+            "dueno"    -> UserRole.DUENO
+            "inquilino" -> UserRole.INQUILINO
+            else       -> UserRole.INQUILINO
+        }
+        return User(
+            id     = usuario.id,
+            nombre = usuario.nombre,
+            correo = usuario.correo,
+            rol    = rol
+        )
+    }
 
     private suspend fun saveUser(user: User, token: String) {
         context.dataStore.edit { prefs ->

@@ -48,6 +48,10 @@ fun LoginScreen(
         authState.user?.let { onLoginSuccess(it) }
     }
 
+    LaunchedEffect(Unit) {
+        authViewModel.clearError()
+    }
+
     if (showRoleDialog) {
         RoleSelectionDialog(
             nombre = "Usuario Google",
