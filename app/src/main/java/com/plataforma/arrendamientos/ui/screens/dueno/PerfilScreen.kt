@@ -186,76 +186,60 @@ fun PerfilScreen(
 
 @Composable
 private fun CambiarContrasenaDialog(onDismiss: () -> Unit) {
-    var actual by remember { mutableStateOf("") }
     var nueva by remember { mutableStateOf("") }
     var confirmar by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
-    var success by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(Icons.Default.Lock, null) },
-        title = { Text(if (success) "Contraseña actualizada" else "Cambiar contraseña") },
+        title = { Text("Cambiar contraseña") },
         text = {
-            if (success) {
-                Text("Tu contraseña ha sido actualizada correctamente.")
-            } else {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    error?.let {
-                        Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-                    }
-                    OutlinedTextField(
-                        value = actual,
-                        onValueChange = { actual = it; error = null },
-                        label = { Text("Contraseña actual") },
-                        visualTransformation = PasswordVisualTransformation(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(10.dp)
-                    )
-                    OutlinedTextField(
-                        value = nueva,
-                        onValueChange = { nueva = it; error = null },
-                        label = { Text("Nueva contraseña") },
-                        visualTransformation = PasswordVisualTransformation(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(10.dp)
-                    )
-                    OutlinedTextField(
-                        value = confirmar,
-                        onValueChange = { confirmar = it; error = null },
-                        label = { Text("Confirmar nueva contraseña") },
-                        visualTransformation = PasswordVisualTransformation(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(10.dp)
-                    )
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    "El cambio de contraseña se gestiona desde el servidor. Contactá al administrador de la plataforma.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                error?.let {
+                    Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                 }
+                OutlinedTextField(
+                    value = nueva,
+                    onValueChange = { nueva = it; error = null },
+                    label = { Text("Nueva contraseña") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(10.dp)
+                )
+                OutlinedTextField(
+                    value = confirmar,
+                    onValueChange = { confirmar = it; error = null },
+                    label = { Text("Confirmar nueva contraseña") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(10.dp)
+                )
             }
         },
         confirmButton = {
-            if (success) {
-                Button(onClick = onDismiss) { Text("Listo") }
-            } else {
-                Button(onClick = {
+            Button(
+                onClick = {
                     error = when {
-                        actual != "123456" -> "La contraseña actual es incorrecta"
                         nueva.length < 6 -> "La nueva contraseña debe tener al menos 6 caracteres"
                         nueva != confirmar -> "Las contraseñas no coinciden"
-                        else -> null
+                        else -> "Función no disponible — el backend no expone un endpoint de cambio de contraseña aún."
                     }
-                    if (error == null) success = true
-                }) { Text("Guardar") }
-            }
+                },
+                enabled = nueva.isNotBlank() && confirmar.isNotBlank()
+            ) { Text("Solicitar cambio") }
         },
         dismissButton = {
-            if (!success) {
-                OutlinedButton(onClick = onDismiss) { Text("Cancelar") }
-            }
+            OutlinedButton(onClick = onDismiss) { Text("Cancelar") }
         }
     )
 }
