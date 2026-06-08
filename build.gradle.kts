@@ -1,7 +1,9 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 
-// Redirige el build fuera de OneDrive para evitar conflictos de sincronización
-layout.buildDirectory.set(file("C:/AndroidBuild/PlataformaArrendamientos/root"))
+// Redirige el build fuera de OneDrive solo en local (CI usa el directorio por defecto)
+if (System.getenv("CI") == null) {
+    layout.buildDirectory.set(file("C:/AndroidBuild/PlataformaArrendamientos/root"))
+}
 
 plugins {
     alias(libs.plugins.android.application) apply false
