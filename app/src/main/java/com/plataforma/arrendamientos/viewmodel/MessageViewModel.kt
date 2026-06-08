@@ -30,7 +30,7 @@ class MessageViewModel @Inject constructor(
             _isLoading.update { true }
             _error.update { null }
             dataRepository.refreshConversations(userId)
-                .onFailure { _error.update { it.message } }
+                .onFailure { e -> _error.update { e.message ?: "Error desconocido" } }
             _isLoading.update { false }
         }
     }
@@ -39,7 +39,7 @@ class MessageViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.update { true }
             dataRepository.refreshMessages(conversationId)
-                .onFailure { _error.update { it.message } }
+                .onFailure { e -> _error.update { e.message ?: "Error desconocido" } }
             _isLoading.update { false }
         }
     }
@@ -79,7 +79,7 @@ class MessageViewModel @Inject constructor(
                     contenido = content,
                     arrendadorId = arrendadorId,
                     arrendatarioId = arrendatarioId
-                ).onFailure { _error.update { it.message } }
+                ).onFailure { e -> _error.update { e.message ?: "Error desconocido" } }
             } else {
                 // Optimistic local fallback when conversation metadata is incomplete
                 val message = Message(

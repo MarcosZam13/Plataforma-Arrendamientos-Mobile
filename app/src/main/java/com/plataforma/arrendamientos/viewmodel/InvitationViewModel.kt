@@ -33,7 +33,7 @@ class InvitationViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.update { true }
             dataRepository.refreshInvitations(userId)
-                .onFailure { _error.update { it.message } }
+                .onFailure { e -> _error.update { e.message ?: "Error desconocido" } }
             _isLoading.update { false }
         }
     }
@@ -82,7 +82,7 @@ class InvitationViewModel @Inject constructor(
                     )
                     onSuccess(created.token.ifBlank { token })
                 }
-                .onFailure { _error.update { it.message } }
+                .onFailure { e -> _error.update { e.message ?: "Error desconocido" } }
             _isLoading.update { false }
         }
     }
@@ -128,7 +128,7 @@ class InvitationViewModel @Inject constructor(
                     )
                     onSuccess()
                 }
-                .onFailure { _error.update { it.message } }
+                .onFailure { e -> _error.update { e.message ?: "Error desconocido" } }
             _isLoading.update { false }
         }
     }
@@ -139,7 +139,7 @@ class InvitationViewModel @Inject constructor(
             _error.update { null }
             dataRepository.updateInvitationStatusApi(id, "cancelada")
                 .onSuccess { onSuccess() }
-                .onFailure { _error.update { it.message } }
+                .onFailure { e -> _error.update { e.message ?: "Error desconocido" } }
             _isLoading.update { false }
         }
     }

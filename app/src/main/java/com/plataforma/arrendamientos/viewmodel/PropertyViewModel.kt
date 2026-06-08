@@ -34,7 +34,7 @@ class PropertyViewModel @Inject constructor(
             _isLoading.update { true }
             _error.update { null }
             dataRepository.refreshProperties()
-                .onFailure { _error.update { it.message } }
+                .onFailure { e -> _error.update { e.message ?: "Error desconocido" } }
             _isLoading.update { false }
         }
     }
@@ -49,7 +49,7 @@ class PropertyViewModel @Inject constructor(
             _error.update { null }
             dataRepository.createPropertyApi(property)
                 .onSuccess { onSuccess() }
-                .onFailure { _error.update { it.message } }
+                .onFailure { e -> _error.update { e.message ?: "Error desconocido" } }
             _isLoading.update { false }
         }
     }
@@ -60,7 +60,7 @@ class PropertyViewModel @Inject constructor(
             _error.update { null }
             dataRepository.updatePropertyApi(property)
                 .onSuccess { onSuccess() }
-                .onFailure { _error.update { it.message } }
+                .onFailure { e -> _error.update { e.message ?: "Error desconocido" } }
             _isLoading.update { false }
         }
     }
@@ -71,7 +71,7 @@ class PropertyViewModel @Inject constructor(
             _error.update { null }
             dataRepository.deletePropertyApi(id)
                 .onSuccess { onSuccess() }
-                .onFailure { _error.update { it.message } }
+                .onFailure { e -> _error.update { e.message ?: "Error desconocido" } }
             _isLoading.update { false }
         }
     }

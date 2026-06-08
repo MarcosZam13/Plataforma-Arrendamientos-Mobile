@@ -33,7 +33,7 @@ class PaymentViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.update { true }
             dataRepository.refreshPayments(userId)
-                .onFailure { _error.update { it.message } }
+                .onFailure { e -> _error.update { e.message ?: "Error desconocido" } }
             _isLoading.update { false }
         }
     }
@@ -71,7 +71,7 @@ class PaymentViewModel @Inject constructor(
             _error.update { null }
             dataRepository.createPaymentApi(payment)
                 .onSuccess { onSuccess() }
-                .onFailure { _error.update { it.message } }
+                .onFailure { e -> _error.update { e.message ?: "Error desconocido" } }
             _isLoading.update { false }
         }
     }
@@ -95,7 +95,7 @@ class PaymentViewModel @Inject constructor(
                     )
                     onSuccess()
                 }
-                .onFailure { _error.update { it.message } }
+                .onFailure { e -> _error.update { e.message ?: "Error desconocido" } }
             _isLoading.update { false }
         }
     }
@@ -119,7 +119,7 @@ class PaymentViewModel @Inject constructor(
                     )
                     onSuccess()
                 }
-                .onFailure { _error.update { it.message } }
+                .onFailure { e -> _error.update { e.message ?: "Error desconocido" } }
             _isLoading.update { false }
         }
     }

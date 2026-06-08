@@ -30,7 +30,7 @@ class NotificationViewModel @Inject constructor(
             _isLoading.update { true }
             _error.update { null }
             dataRepository.refreshNotifications(userId)
-                .onFailure { _error.update { it.message } }
+                .onFailure { e -> _error.update { e.message ?: "Error desconocido" } }
             _isLoading.update { false }
         }
     }
